@@ -95,7 +95,12 @@
   }
 
   .view { display: none; }
-  .view.active { display: block; }
+  .view.active { display: block; animation: fadeIn 0.2s; }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 
   /* Календарь */
   .calendar-header {
@@ -113,6 +118,7 @@
     border-radius: 10px;
     font-size: 16px;
     cursor: pointer;
+    transition: all 0.15s;
   }
   .calendar-header button:hover { background: #252535; }
   .calendar-header h2 {
@@ -146,10 +152,11 @@
     position: relative;
     color: #a1a1aa;
     font-weight: 500;
-    transition: all 0.1s;
+    transition: all 0.15s;
   }
   .day:hover { background: #1f1f2e; }
   .day.other-month { color: #3f3f46; }
+  .day.holiday { background: #2a1515; color: #fca5a5; }
   .day.today {
     background: #6366f1;
     color: #fff;
@@ -216,11 +223,21 @@
     border-radius: 12px;
     margin-bottom: 8px;
     cursor: pointer;
-    transition: all 0.15s;
+    transition: all 0.2s;
+    animation: slideIn 0.2s;
   }
+  
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  
   .task-item:hover { border-color: #252535; background: #14141f; }
   .task-item.done { opacity: 0.4; }
   .task-item.done .task-title { text-decoration: line-through; }
+  .task-item.dragging { opacity: 0.5; transform: scale(0.98); }
+  .task-item.drag-over { border-color: #6366f1; background: #1a1a2e; }
+  
   .task-check {
     width: 20px;
     height: 20px;
@@ -277,18 +294,24 @@
     border-radius: 6px;
     font-weight: 600;
   }
-  .task-delete {
+  .task-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .task-action-btn {
     background: none;
     border: none;
     color: #52525b;
-    font-size: 22px;
+    font-size: 18px;
     cursor: pointer;
-    padding: 0 4px;
-    flex-shrink: 0;
-    line-height: 1;
-    transition: color 0.15s;
+    padding: 4px;
+    border-radius: 6px;
+    transition: all 0.15s;
   }
-  .task-delete:hover { color: #ef4444; }
+  .task-action-btn:hover { color: #fafafa; background: #1f1f2e; }
+  .task-action-btn.delete:hover { color: #ef4444; }
+  
   .empty {
     text-align: center;
     color: #3f3f46;
@@ -372,7 +395,7 @@
     justify-content: center;
     padding: 20px;
   }
-  .modal-overlay.show { display: flex; }
+  .modal-overlay.show { display: flex; animation: fadeIn 0.2s; }
   .modal {
     background: #14141f;
     border: 1px solid #252535;
@@ -382,7 +405,14 @@
     width: 100%;
     max-height: 90vh;
     overflow-y: auto;
+    animation: scaleIn 0.2s;
   }
+  
+  @keyframes scaleIn {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  
   .modal h3 {
     font-size: 18px;
     color: #fafafa;
@@ -620,7 +650,7 @@
   <div class="view" id="view-all"><div id="allTasksList"></div></div>
   <div class="view" id="view-schedule">
     <div class="schedule-intro">
-      Здесь твои регулярные занятия. Они автоматически появляются в календаре в нужные дни. Нажми на задачу, чтобы изменить.
+      Перетаскивай задачи между днями для изменения расписания. Нажми на задачу для редактирования.
     </div>
     <div id="scheduleList"></div>
     <button class="add-task-btn" id="openAddTemplate">+ Добавить в расписание</button>
@@ -650,7 +680,7 @@
         <label>Время</label>
         <input type="time" id="fTime" value="09:00">
       </div>
-      <div class="form-group">
+      <div class="form-group" id="categoryGroup">
         <label>Категория</label>
         <select id="fCategory"></select>
       </div>
@@ -787,6 +817,21 @@ const WEEKDAYS_FULL = ['воскресенье','понедельник','вто
 const WEEKDAYS_SHORT = ['вс','пн','вт','ср','чт','пт','сб'];
 const MONTHS_GEN = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
 
+// Праздники ТК РФ (месяц-день)
+const HOLIDAYS = [
+  '1-1','1-2','1-3','1-4','1-5','1-6','1-7','1-8', // Новогодние каникулы
+  '1-9', // Рождество
+  '2-23', // День защитника Отечества
+  '3-8', // Международный женский день
+  '5-1', // Праздник Весны и Труда
+  '5-9', // День Победы
+  '6-12', // День России
+  '11-4'  // День народного единства
+];
+
+// Летние каникулы (примерно: 1 июля - 31 августа)
+const SUMMER_VACATION = { startMonth: 6, startDay: 1, endMonth: 7, endDay: 31 };
+
 let state = {
   tasks: {},
   templates: [],
@@ -808,6 +853,20 @@ function loadState() {
 function saveState() { localStorage.setItem('plannerState', JSON.stringify(state)); }
 function dateKey(d) { return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; }
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+function isHoliday(date) {
+  const key = `${date.getMonth()+1}-${date.getDate()}`;
+  return HOLIDAYS.includes(key);
+}
+
+function isSummerVacation(date) {
+  const m = date.getMonth();
+  const d = date.getDate();
+  if (m === SUMMER_VACATION.startMonth && d >= SUMMER_VACATION.startDay) return true;
+  if (m === SUMMER_VACATION.endMonth && d <= SUMMER_VACATION.endDay) return true;
+  if (m > SUMMER_VACATION.startMonth && m < SUMMER_VACATION.endMonth) return true;
+  return false;
+}
 
 function getWeekType(date) {
   const start = new Date(state.settings.semesterStart);
@@ -902,6 +961,7 @@ function renderCalendar() {
     div.className = 'day';
     div.textContent = d;
     const thisDate = new Date(viewYear, viewMonth, d);
+    if (isHoliday(thisDate) || isSummerVacation(thisDate)) div.classList.add('holiday');
     if (hasTasksOnDate(thisDate)) div.classList.add('has-tasks');
     if (thisDate.toDateString() === today.toDateString()) div.classList.add('today');
     if (thisDate.toDateString() === selectedDate.toDateString()) div.classList.add('selected');
@@ -922,6 +982,7 @@ function renderCalendar() {
 }
 
 function hasTasksOnDate(date) {
+  if (isHoliday(date) || isSummerVacation(date)) return false;
   const key = dateKey(date);
   if (state.tasks[key] && state.tasks[key].length > 0) return true;
   const weekday = date.getDay();
@@ -931,9 +992,12 @@ function hasTasksOnDate(date) {
   );
 }
 
-function getTasksForDate(date) {
+function getTasksForDate(date, includeTemplates = true) {
   const key = dateKey(date);
   const regular = (state.tasks[key] || []).map(t => ({ ...t, _type: 'regular' }));
+  
+  if (!includeTemplates) return regular;
+  
   const weekday = date.getDay();
   const weekType = getWeekType(date);
   const recurring = state.templates
@@ -952,6 +1016,19 @@ function renderTasks() {
   const listEl = document.getElementById('taskList');
   const dateEl = document.getElementById('selectedDate');
   listEl.innerHTML = '';
+  
+  if (isHoliday(selectedDate)) {
+    dateEl.textContent = `${selectedDate.getDate()} ${MONTHS_GEN[selectedDate.getMonth()]} — Праздник`;
+    listEl.innerHTML = '<div class="empty">Сегодня праздник, задач нет</div>';
+    return;
+  }
+  
+  if (isSummerVacation(selectedDate)) {
+    dateEl.textContent = `${selectedDate.getDate()} ${MONTHS_GEN[selectedDate.getMonth()]} — Летние каникулы`;
+    listEl.innerHTML = '<div class="empty">Летние каникулы</div>';
+    return;
+  }
+  
   dateEl.textContent = `${selectedDate.getDate()} ${MONTHS_GEN[selectedDate.getMonth()]} ${selectedDate.getFullYear()}`;
 
   const dayTasks = getTasksForDate(selectedDate);
@@ -962,9 +1039,19 @@ function renderTasks() {
   dayTasks.forEach(task => listEl.appendChild(createTaskElement(task, selectedDate)));
 }
 
-function createTaskElement(task, date) {
+function createTaskElement(task, date, isSchedule = false) {
   const li = document.createElement('li');
   li.className = 'task-item' + (task.done ? ' done' : '');
+  
+  if (isSchedule) {
+    li.draggable = true;
+    li.dataset.taskId = task.id;
+    li.ondragstart = (e) => {
+      e.dataTransfer.setData('text/plain', task.id);
+      li.classList.add('dragging');
+    };
+    li.ondragend = () => li.classList.remove('dragging');
+  }
 
   const check = document.createElement('input');
   check.type = 'checkbox'; check.className = 'task-check';
@@ -1018,13 +1105,38 @@ function createTaskElement(task, date) {
   }
   content.appendChild(meta);
 
+  const actions = document.createElement('div');
+  actions.className = 'task-actions';
+  
+  if (isSchedule) {
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'task-action-btn';
+    copyBtn.textContent = '📋';
+    copyBtn.title = 'Копировать';
+    copyBtn.onclick = e => {
+      e.stopPropagation();
+      duplicateTask(task);
+    };
+    actions.appendChild(copyBtn);
+  }
+  
   const del = document.createElement('button');
-  del.className = 'task-delete'; del.textContent = '×';
+  del.className = 'task-action-btn delete';
+  del.textContent = '×';
   del.onclick = e => { e.stopPropagation(); deleteTask(task, date); };
+  actions.appendChild(del);
 
   li.onclick = () => showDetails(task, date);
-  li.appendChild(check); li.appendChild(content); li.appendChild(del);
+  li.appendChild(check); li.appendChild(content); li.appendChild(actions);
   return li;
+}
+
+function duplicateTask(task) {
+  const newTask = { ...task, id: uid(), title: task.title + ' (копия)' };
+  state.templates.push(newTask);
+  saveState();
+  renderSchedule();
+  showToast('Готово', 'Задача скопирована');
 }
 
 function toggleTaskDone(task, date, done) {
@@ -1057,10 +1169,12 @@ function deleteTask(task, date) {
 
 let editingTask = null;
 let editingDate = null;
+let editingIsSchedule = false;
 
-function openTaskModal(date, taskToEdit) {
+function openTaskModal(date, taskToEdit, isSchedule = false) {
   editingTask = taskToEdit || null;
   editingDate = date || selectedDate;
+  editingIsSchedule = isSchedule;
   document.getElementById('taskModalTitle').textContent = taskToEdit ? 'Редактировать задачу' : 'Новая задача';
   document.getElementById('fTitle').value = taskToEdit ? taskToEdit.title : '';
   document.getElementById('fDesc').value = taskToEdit ? (taskToEdit.description || '') : '';
@@ -1070,6 +1184,8 @@ function openTaskModal(date, taskToEdit) {
   document.getElementById('timeWrapper').classList.toggle('disabled', isAllDay);
   document.getElementById('fTime').value = taskToEdit && taskToEdit.time ? taskToEdit.time : '09:00';
   
+  // Скрываем выбор категории для расписания
+  document.getElementById('categoryGroup').style.display = isSchedule ? 'none' : 'block';
   renderCategorySelect(document.getElementById('fCategory'), taskToEdit ? taskToEdit.category : state.categories[0].id);
   
   const isRecurring = taskToEdit && taskToEdit._type === 'template';
@@ -1107,7 +1223,7 @@ document.getElementById('saveTaskBtn').onclick = () => {
     title,
     description: document.getElementById('fDesc').value.trim(),
     time,
-    category: document.getElementById('fCategory').value
+    category: editingIsSchedule ? 'study' : document.getElementById('fCategory').value
   };
   
   const isRecurring = document.getElementById('fRecurring').checked;
@@ -1146,7 +1262,7 @@ document.getElementById('saveTaskBtn').onclick = () => {
 document.getElementById('openAddTask').onclick = () => openTaskModal(selectedDate);
 document.getElementById('openAddTemplate').onclick = () => {
   editingDate = new Date();
-  openTaskModal(null, null);
+  openTaskModal(null, null, true);
   document.getElementById('fRecurring').checked = true;
   document.getElementById('recurringOptions').classList.add('show');
 };
@@ -1195,10 +1311,6 @@ function renderAllTasks() {
       allDates.set(new Date(y, m, d).toDateString(), new Date(y, m, d));
     }
   }
-  for (let i = 0; i < 14; i++) {
-    const d = new Date(today); d.setDate(d.getDate() + i);
-    if (hasTasksOnDate(d)) allDates.set(d.toDateString(), d);
-  }
 
   const sorted = [...allDates.values()].sort((a, b) => a - b);
   const overdue = sorted.filter(d => d < today);
@@ -1206,7 +1318,8 @@ function renderAllTasks() {
 
   function renderGroup(dates, isOverdue) {
     dates.forEach(date => {
-      const dayTasks = getTasksForDate(date).filter(t => !isOverdue || !t.done);
+      // Только обычные задачи, без расписания
+      const dayTasks = getTasksForDate(date, false).filter(t => !isOverdue || !t.done);
       if (dayTasks.length === 0) return;
 
       const group = document.createElement('div');
@@ -1219,10 +1332,8 @@ function renderAllTasks() {
       else if (diff === 1) label = 'Завтра';
       else if (diff === -1) label = 'Вчера';
       else label = `${date.getDate()} ${MONTHS_GEN[date.getMonth()]}, ${WEEKDAYS_SHORT[date.getDay()]}`;
-      const weekType = getWeekType(date);
-      const weekLabel = weekType === 'upper' ? ' · верх' : ' · низ';
       
-      header.innerHTML = `<span>${isOverdue ? '⚠️ ' : ''}${label}${weekLabel}</span><span class="count">${dayTasks.length} ${pluralize(dayTasks.length,'задача','задачи','задач')}</span>`;
+      header.innerHTML = `<span>${isOverdue ? '⚠️ ' : ''}${label}</span><span class="count">${dayTasks.length} ${pluralize(dayTasks.length,'задача','задачи','задач')}</span>`;
       group.appendChild(header);
 
       const ul = document.createElement('ul');
@@ -1241,7 +1352,7 @@ function renderAllTasks() {
   }
 }
 
-// ===== РАСПИСАНИЕ (улучшенная вкладка) =====
+// ===== РАСПИСАНИЕ (с drag-and-drop) =====
 function renderSchedule() {
   const container = document.getElementById('scheduleList');
   container.innerHTML = '';
@@ -1258,105 +1369,81 @@ function renderSchedule() {
   });
 
   [1,2,3,4,5,6,0].forEach(wd => {
-    if (!byWeekday[wd]) return;
     const group = document.createElement('div');
     group.className = 'weekday-group';
+    group.dataset.weekday = wd;
+    
+    // Drop zone для всего дня
+    group.ondragover = e => {
+      e.preventDefault();
+      group.classList.add('drag-over');
+    };
+    group.ondragleave = () => group.classList.remove('drag-over');
+    group.ondrop = e => {
+      e.preventDefault();
+      group.classList.remove('drag-over');
+      const taskId = e.dataTransfer.getData('text/plain');
+      moveTaskToWeekday(taskId, wd);
+    };
     
     const header = document.createElement('div');
     header.className = 'weekday-header';
-    header.innerHTML = `<span>${WEEKDAYS_FULL[wd]}</span><span class="count">${byWeekday[wd].length} ${pluralize(byWeekday[wd].length,'занятие','занятия','занятий')}</span>`;
+    const count = byWeekday[wd] ? byWeekday[wd].length : 0;
+    header.innerHTML = `<span>${WEEKDAYS_FULL[wd]}</span><span class="count">${count} ${pluralize(count,'занятие','занятия','занятий')}</span>`;
     group.appendChild(header);
 
-    // Группируем по типу недели
-    const both = byWeekday[wd].filter(t => t.weekType === 'both');
-    const upper = byWeekday[wd].filter(t => t.weekType === 'upper');
-    const lower = byWeekday[wd].filter(t => t.weekType === 'lower');
+    if (!byWeekday[wd] || byWeekday[wd].length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.style.padding = '20px 0';
+      empty.textContent = 'Перетащи сюда задачу';
+      group.appendChild(empty);
+    } else {
+      // Группируем по типу недели
+      const both = byWeekday[wd].filter(t => t.weekType === 'both');
+      const upper = byWeekday[wd].filter(t => t.weekType === 'upper');
+      const lower = byWeekday[wd].filter(t => t.weekType === 'lower');
 
-    function renderTasksList(tasks, dividerText, dividerClass) {
-      if (tasks.length === 0) return;
-      if (dividerText) {
-        const div = document.createElement('div');
-        div.className = 'week-type-divider ' + dividerClass;
-        div.textContent = dividerText;
-        group.appendChild(div);
+      function renderTasksList(tasks, dividerText, dividerClass) {
+        if (tasks.length === 0) return;
+        if (dividerText) {
+          const div = document.createElement('div');
+          div.className = 'week-type-divider ' + dividerClass;
+          div.textContent = dividerText;
+          group.appendChild(div);
+        }
+        const ul = document.createElement('ul');
+        ul.className = 'task-list';
+        tasks.sort((a,b) => {
+          if (!a.time && !b.time) return 0;
+          if (!a.time) return 1;
+          if (!b.time) return -1;
+          return a.time.localeCompare(b.time);
+        }).forEach(t => {
+          const li = createTaskElement({ ...t, _type: 'template' }, new Date(), true);
+          ul.appendChild(li);
+        });
+        group.appendChild(ul);
       }
-      const ul = document.createElement('ul');
-      ul.className = 'task-list';
-      tasks.sort((a,b) => {
-        if (!a.time && !b.time) return 0;
-        if (!a.time) return 1;
-        if (!b.time) return -1;
-        return a.time.localeCompare(b.time);
-      }).forEach(t => {
-        const li = document.createElement('li');
-        li.className = 'task-item';
-        
-        const content = document.createElement('div');
-        content.className = 'task-content';
-        
-        const hdr = document.createElement('div');
-        hdr.className = 'task-header';
-        const time = document.createElement('span');
-        time.className = 'task-time';
-        if (t.time) {
-          time.textContent = t.time;
-        } else {
-          time.classList.add('allday');
-          time.textContent = 'весь день';
-        }
-        const title = document.createElement('span');
-        title.className = 'task-title'; title.textContent = t.title;
-        hdr.appendChild(time);
-        hdr.appendChild(title);
-        content.appendChild(hdr);
-        
-        if (t.description) {
-          const desc = document.createElement('div');
-          desc.className = 'task-desc'; desc.textContent = t.description;
-          content.appendChild(desc);
-        }
-        
-        const meta = document.createElement('div');
-        meta.className = 'task-meta';
-        const cat = getCategoryById(t.category);
-        const badge = document.createElement('span');
-        badge.className = 'category-badge';
-        badge.textContent = cat.name;
-        badge.style.background = cat.bg; badge.style.color = cat.color;
-        meta.appendChild(badge);
-        content.appendChild(meta);
-        
-        li.onclick = () => {
-          editingTask = { ...t, _type: 'template' };
-          editingDate = new Date();
-          openTaskModal(editingDate, editingTask);
-        };
-        
-        const del = document.createElement('button');
-        del.className = 'task-delete'; del.textContent = '×';
-        del.onclick = e => {
-          e.stopPropagation();
-          if (confirm(`Удалить "${t.title}" из расписания?`)) {
-            state.templates = state.templates.filter(x => x.id !== t.id);
-            Object.keys(state.templateCompletions).forEach(k => {
-              if (k.startsWith(t.id + '-')) delete state.templateCompletions[k];
-            });
-            saveState(); renderSchedule(); renderCalendar(); renderTasks(); renderAllTasks();
-          }
-        };
-        
-        li.appendChild(content); li.appendChild(del);
-        ul.appendChild(li);
-      });
-      group.appendChild(ul);
-    }
 
-    renderTasksList(both, null, '');
-    renderTasksList(upper, 'Только верхняя неделя', 'upper');
-    renderTasksList(lower, 'Только нижняя неделя', 'lower');
+      renderTasksList(both, null, '');
+      renderTasksList(upper, 'Только верхняя неделя', 'upper');
+      renderTasksList(lower, 'Только нижняя неделя', 'lower');
+    }
 
     container.appendChild(group);
   });
+}
+
+function moveTaskToWeekday(taskId, newWeekday) {
+  const task = state.templates.find(t => t.id === taskId);
+  if (task) {
+    task.weekday = newWeekday;
+    saveState();
+    renderSchedule();
+    renderCalendar();
+    showToast('Готово', `Перемещено на ${WEEKDAYS_FULL[newWeekday]}`);
+  }
 }
 
 // ===== НАСТРОЙКИ =====
@@ -1521,13 +1608,23 @@ function parseTextToTasks(text) {
     title = title.replace(/^[—\-–,.\s]+/, '').replace(/[—\-–,.\s]+$/, '').trim();
     if (!title) continue;
     
-    // 7. Определяем категорию
+    // 7. Определяем категорию (улучшенная логика)
     let category = 'personal';
     const titleLower = title.toLowerCase();
     
-    const studyPatterns = [/\bлекци(я|и|ю|ей)\b/i, /\bсеминар/i, /\bпрактик(а|и|у|ой)\b/i, /\bпар(а|ы|е)\b/i, /\bлабораторн/i, /\bаудитори/i, /\bа\.\s*\d/i, /\bнирфи\b/i, /\bю\.?ф\.?\b/i, /\bвкс\b/i, /\bзач(ёт|ет)/i, /\bэкзамен/i, /\bкурсов/i, /\bдиплом/i];
+    // Паттерны для учёбы (расширенные)
+    const studyPatterns = [
+      /\bлекци(я|и|ю|ей)\b/i, /\bсеминар/i, /\bпрактик(а|и|у|ой)\b/i, /\bпар(а|ы|е)\b/i,
+      /\bлабораторн/i, /\bаудитори/i, /\bа\.\s*\d/i, /\bнирфи\b/i, /\bю\.?ф\.?\b/i, /\bвкс\b/i,
+      /\bзач(ёт|ет)/i, /\bэкзамен/i, /\bкурсов/i, /\bдиплом/i, /\bпроблем(ы|а|ам)/i,
+      /\bактуальн/i, /\bорганизаци/i, /\bуправлен/i, /\bпроект/i, /\bквалификаци/i,
+      /\bпреследован/i, /\bпрокуратур/i, /\bследственн/i, /\bкримин/i, /\bполитик/i,
+      /\bцифров/i, /\bконституцион/i, /\bгражданск/i, /\bуголовн/i, /\bпроцесс/i,
+      /\bправ(о|а|у|ом)/i, /\bгосударств/i, /\bмуниципальн/i, /\bуправлен/i
+    ];
+    
     const homePatterns = [/\bдом\b/i, /\bквартир/i, /\bубор/i, /\bготовк/i, /\bпокуп/i, /\bмагазин/i, /\bпродукт/i];
-    const workPatterns = [/\bработ/i, /\bдедлайн/i, /\bотч(ёт|ет)/i, /\bсмен/i, /\bклиент/i, /\bпроект/i];
+    const workPatterns = [/\bработ/i, /\bдедлайн/i, /\bотч(ёт|ет)/i, /\bсмен/i, /\bклиент/i];
     const restPatterns = [/\bотдых/i, /\bкино\b/i, /\bтеатр/i, /\bгуля/i, /\bспортзал/i, /\bтренир/i];
     
     if (studyPatterns.some(p => p.test(titleLower))) category = 'study';
@@ -1560,7 +1657,7 @@ function parseTextToTasks(text) {
     results.push({
       title: title.slice(0, 100),
       time,
-      category,
+      category: taskType === 'template' ? 'study' : category, // Для расписания всегда "Учёба"
       taskType,
       weekday,
       weekType: finalWeekType,
@@ -1629,7 +1726,7 @@ function renderParsedTasks(parsed, containerId) {
           title: task.title,
           description: '',
           time: task.time,
-          category: task.category,
+          category: 'study', // Всегда "Учёба" для расписания
           weekday: task.weekday,
           weekType: task.weekType
         });
