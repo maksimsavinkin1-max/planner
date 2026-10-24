@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a1a2e">
+<title>Мой Планировщик</title>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro", "Segoe UI", sans-serif;
+    background: linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 50%, #16213e 100%);
+    min-height: 100vh;
+    padding: 20px;
+    color: #e0e0e0;
+  }
+  .container {
+    max-width: 540px;
+    margin: 0 auto;
+    background: #1e1e2e;
+    border-radius: 24px;
+    padding: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    border: 1px solid #2a2a3e;
+  }
+  h1 { font-size: 22px; text-align: center; margin-bottom: 10px; color: #f0f0f0; }
+  
+  .week-indicator {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    font-size: 13px;
+    color: #888;
+  }
+  .week-badge { padding: 4px 12px; border-radius: 12px; font-weight: 600; font-size: 12px; }
+  .week-badge.upper { background: #2a3a5e; color: #a8b4ff; }
+  .week-badge.lower { background: #3a2a4e; color: #d4a8ff; }
+  .icon-btn {
+    background: none;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 4px 8px;
+    border-radius: 8px;
+  }
+  .icon-btn:hover { color: #fff; background: #2a2a3e; }
+
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 20px;
+    background: #15151f;
+    padding: 4px;
+    border-radius: 12px;
+    border: 1px solid #2a2a3e;
+  }
+  .tab {
+    flex: 1;
+    padding: 9px 4px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #888;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .tab.active { background: #2a2a3e; color: #a8b4ff; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .calendar-header button {
+    background: #2a2a3e; color: #a8b4ff; border: 1px solid #3a3a50;
+    width: 34px; height: 34px; border-radius: 50%; font-size: 16px; cursor: pointer;
+  }
+  .calendar-header h2 { font-size: 16px; text-transform: capitalize; color: #f0f0f0; }
+  .weekdays, .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .weekdays div { text-align: center; font-size: 11px; color: #666; padding: 6px 0; font-weight: 600; text-transform: uppercase; }
+  .day {
+    aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+    border-radius: 8px; font-size: 13px; cursor: pointer; position: relative; color: #c0c0c0;
+  }
+  .day:hover { background: #2a2a3e; }
+  .day.other-month { color: #444; }
+  .day.today { background: #7c8cf5; color: #fff; font-weight: bold; }
+  .day.selected { background: #a855f7; color: #fff; font-weight: bold; }
+  .day.has-tasks::after {
+    content: ''; position: absolute; bottom: 3px;
+    width: 4px; height: 4px; background: #ff6b9d; border-radius: 50%;
+  }
+  .day.today.has-tasks::after, .day.selected.has-tasks::after { background: #fff; }
+
+  .tasks-section { margin-top: 20px; border-top: 1px solid #2a2a3e; padding-top: 15px; }
+  .selected-date { font-size: 15px; font-weight: 600; margin-bottom: 12px; color: #a8b4ff; }
+  
+  .add-task-btn {
+    width: 100%; padding: 12px; background: #2a2a3e;
+    border: 1px dashed #3a3a50; border-radius: 12px;
+    color: #a8b4ff; font-size: 14px; cursor: pointer;
+    margin-bottom: 12px; transition: all 0.2s;
+  }
+  .add-task-btn:hover { background: #3a3a50; border-color: #7c8cf5; }
+
+  .task-list { list-style: none; }
+  .task-item {
+    display: flex; align-items: flex-start; gap: 10px; padding: 12px;
+    background: #15151f; border: 1px solid #2a2a3e; border-radius: 12px;
+    margin-bottom: 8px; cursor: pointer; transition: all 0.2s;
+  }
+  .task-item:hover { border-color: #3a3a50; }
+  .task-item.done { opacity: 0.45; }
+  .task-item.done .task-title { text-decoration: line-through; color: #888; }
+  .task-check { width: 20px; height: 20px; cursor: pointer; accent-color: #7c8cf5; margin-top: 2px; flex-shrink: 0; }
+  .task-content { flex: 1; min-width: 0; }
+  .task-header { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 3px; }
+  .task-time { font-size: 12px; color: #a8b4ff; font-weight: 600; }
+  .task-time.allday { color: #888; font-style: italic; }
+  .task-title { font-size: 14px; color: #e0e0e0; font-weight: 500; }
+  .task-desc { font-size: 12px; color: #888; margin-top: 3px; line-height: 1.4; }
+  .category-badge {
+    font-size: 10px; padding: 2px 7px; border-radius: 8px;
+    font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;
+  }
+  .recurring-badge {
+    font-size: 10px; padding: 2px 6px; background: #2a3a5e;
+    color: #a8b4ff; border-radius: 8px; font-weight: 600;
+  }
+  .task-delete {
+    background: none; border: none; color: #ff6b9d;
+    font-size: 20px; cursor: pointer; padding: 0 4px; flex-shrink: 0;
+  }
+  .empty { text-align: center; color: #555; padding: 30px 0; font-size: 14px; }
+
+  .day-group { margin-bottom: 18px; }
+  .day-group-header {
+    font-size: 12px; font-weight: 700; color: #a8b4ff;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin-bottom: 8px; padding-bottom: 5px;
+    border-bottom: 2px solid #2a2a3e;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .day-group-header.overdue { color: #ff6b9d; border-color: #3a1a2a; }
+  .day-group-header .count { font-size: 11px; color: #666; font-weight: 500; text-transform: none; }
+
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7); z-index: 100;
+    align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: #1e1e2e; border: 1px solid #3a3a50;
+    border-radius: 16px; padding: 20px;
+    max-width: 480px; width: 100%; max-height: 90vh; overflow-y: auto;
+  }
+  .modal h3 { font-size: 18px; color: #f0f0f0; margin-bottom: 15px; }
+  .form-group { margin-bottom: 12px; }
+  .form-group label {
+    display: block; font-size: 12px; color: #888;
+    margin-bottom: 5px; text-transform: uppercase; font-weight: 600;
+  }
+  .form-group input, .form-group textarea, .form-group select {
+    width: 100%; background: #15151f; color: #e0e0e0;
+    border: 1px solid #2a2a3e; padding: 10px;
+    border-radius: 10px; font-size: 14px; outline: none; font-family: inherit;
+  }
+  .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: #7c8cf5; }
+  .form-group textarea { resize: vertical; min-height: 60px; }
+  .form-row { display: flex; gap: 8px; }
+  .form-row > * { flex: 1; }
+  .checkbox-group {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px; background: #15151f; border-radius: 10px; cursor: pointer;
+  }
+  .checkbox-group input { width: auto; }
+  .checkbox-group label { margin: 0; text-transform: none; font-size: 14px; color: #e0e0e0; cursor: pointer; }
+  .recurring-options { display: none; margin-top: 10px; }
+  .recurring-options.show { display: block; }
+  .time-input-wrapper { position: relative; }
+  .time-input-wrapper.disabled input { opacity: 0.4; pointer-events: none; }
+  .modal-buttons { display: flex; gap: 8px; margin-top: 18px; }
+  .btn {
+    flex: 1; padding: 11px; border: none;
+    border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .btn-primary { background: #7c8cf5; color: #fff; }
+  .btn-primary:hover { background: #8e9dff; }
+  .btn-secondary { background: #2a2a3e; color: #c0c0c0; }
+  .btn-danger { background: #3a1a2a; color: #ff6b9d; }
+
+  .schedule-section { margin-bottom: 20px; }
+  .weekday-group { margin-bottom: 15px; }
+  .weekday-header {
+    font-size: 13px; font-weight: 700; color: #888;
+    margin-bottom: 8px; padding: 6px 10px;
+    background: #15151f; border-radius: 8px; text-transform: capitalize;
+  }
+
+  .category-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .category-item {
+    display: flex; align-items: center; gap: 5px;
+    padding: 5px 10px; border-radius: 10px;
+    font-size: 12px; font-weight: 600;
+  }
+  .category-item .del-cat {
+    background: none; border: none; color: inherit;
+    opacity: 0.6; cursor: pointer; font-size: 14px; padding: 0 2px;
+  }
+
+  /* Импорт */
+  .import-tabs {
+    display: flex; gap: 4px; margin-bottom: 15px;
+    background: #15151f; padding: 4px; border-radius: 10px;
+  }
+  .import-tab {
+    flex: 1; padding: 8px; border: none; background: transparent;
+    border-radius: 7px; font-size: 13px; font-weight: 600;
+    color: #888; cursor: pointer;
+  }
+  .import-tab.active { background: #2a2a3e; color: #a8b4ff; }
+  .import-view { display: none; }
+  .import-view.active { display: block; }
+  .file-drop {
+    border: 2px dashed #3a3a50; border-radius: 12px;
+    padding: 30px 20px; text-align: center; cursor: pointer;
+    transition: all 0.2s; margin-bottom: 12px;
+  }
+  .file-drop:hover, .file-drop.drag { border-color: #7c8cf5; background: #15151f; }
+  .file-drop-icon { font-size: 40px; margin-bottom: 8px; }
+  .file-drop-text { color: #888; font-size: 13px; }
+  .progress-bar {
+    height: 6px; background: #15151f; border-radius: 3px;
+    overflow: hidden; margin: 10px 0;
+  }
+  .progress-fill {
+    height: 100%; background: linear-gradient(90deg, #7c8cf5, #a855f7);
+    width: 0%; transition: width 0.3s;
+  }
+  .progress-text { font-size: 12px; color: #888; text-align: center; }
+  .recognized-text {
+    background: #15151f; border: 1px solid #2a2a3e;
+    border-radius: 10px; padding: 12px; margin: 10px 0;
+    max-height: 150px; overflow-y: auto;
+    font-size: 13px; color: #c0c0c0; white-space: pre-wrap;
+    font-family: monospace;
+  }
+  .parsed-task {
+    background: #15151f; border: 1px solid #2a2a3e;
+    border-radius: 10px; padding: 10px; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .parsed-task input[type="checkbox"] { accent-color: #7c8cf5; }
+  .parsed-task-info { flex: 1; font-size: 13px; }
+  .parsed-task-info strong { color: #a8b4ff; }
+  .parsed-task-info small { color: #888; display: block; margin-top: 2px; }
+
+  .toast {
+    position: fixed; top: 20px; left: 50%;
+    transform: translateX(-50%) translateY(-150%);
+    background: #1e1e2e; color: #e0e0e0;
+    padding: 14px 20px; border-radius: 14px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    border: 1px solid #3a3a50; border-left: 4px solid #7c8cf5;
+    max-width: 90%; z-index: 1000;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    font-size: 14px;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast .toast-title { font-weight: 700; color: #a8b4ff; margin-bottom: 3px; font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>📅 Мой Планировщик</h1>
+
+  <div class="week-indicator">
+    <span>Сейчас:</span>
+    <span class="week-badge" id="weekBadge">—</span>
+    <button class="icon-btn" id="openImport" title="Импорт">📥</button>
+    <button class="icon-btn" id="openSettings" title="Настройки">⚙️</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="calendar">📆 Календарь</button>
+    <button class="tab" data-tab="all">📋 Все</button>
+    <button class="tab" data-tab="schedule">🔁 Расписание</button>
+  </div>
+
+  <div class="view active" id="view-calendar">
+    <div class="calendar-header">
+      <button id="prevMonth">‹</button>
+      <h2 id="monthYear"></h2>
+      <button id="nextMonth">›</button>
+    </div>
+    <div class="weekdays">
+      <div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div>
+    </div>
+    <div class="days" id="days"></div>
+
+    <div class="tasks-section">
+      <div class="selected-date" id="selectedDate"></div>
+      <button class="add-task-btn" id="openAddTask">+ Добавить задачу</button>
+      <ul class="task-list" id="taskList"></ul>
+    </div>
+  </div>
+
+  <div class="view" id="view-all"><div id="allTasksList"></div></div>
+  <div class="view" id="view-schedule">
+    <div id="scheduleList"></div>
+    <button class="add-task-btn" id="openAddTemplate">+ Добавить в расписание</button>
+  </div>
+</div>
+
+<!-- Модалка задачи -->
+<div class="modal-overlay" id="taskModal">
+  <div class="modal">
+    <h3 id="taskModalTitle">Новая задача</h3>
+    <div class="form-group">
+      <label>Название</label>
+      <input type="text" id="fTitle" placeholder="Например: Математика" maxlength="80">
+    </div>
+    <div class="form-group">
+      <label>Описание (необязательно)</label>
+      <textarea id="fDesc" placeholder="Домашка: параграф 5, задачи 1-10" maxlength="300"></textarea>
+    </div>
+    <div class="form-group">
+      <div class="checkbox-group">
+        <input type="checkbox" id="fAllDay">
+        <label for="fAllDay">Весь день (без конкретного времени)</label>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group time-input-wrapper" id="timeWrapper">
+        <label>Время</label>
+        <input type="time" id="fTime" value="09:00">
+      </div>
+      <div class="form-group">
+        <label>Категория</label>
+        <select id="fCategory"></select>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="checkbox-group">
+        <input type="checkbox" id="fRecurring">
+        <label for="fRecurring">Повторять каждую неделю</label>
+      </div>
+      <div class="recurring-options" id="recurringOptions">
+        <div class="form-row">
+          <div class="form-group">
+            <label>День недели</label>
+            <select id="fWeekday">
+              <option value="1">Понедельник</option><option value="2">Вторник</option>
+              <option value="3">Среда</option><option value="4">Четверг</option>
+              <option value="5">Пятница</option><option value="6">Суббота</option>
+              <option value="0">Воскресенье</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Неделя</label>
+            <select id="fWeekType">
+              <option value="both">Каждую</option>
+              <option value="upper">Только верхнюю</option>
+              <option value="lower">Только нижнюю</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-buttons">
+      <button class="btn btn-secondary" onclick="closeModal('taskModal')">Отмена</button>
+      <button class="btn btn-primary" id="saveTaskBtn">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- Модалка настроек -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <h3>⚙️ Настройки</h3>
+    <div class="form-group">
+      <label>Дата начала семестра</label>
+      <input type="date" id="semesterStart">
+    </div>
+    <div class="form-group">
+      <div class="checkbox-group">
+        <input type="checkbox" id="upperIsEven">
+        <label for="upperIsEven">Неделя начала семестра — верхняя</label>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Категории</label>
+      <div class="category-list" id="categoryList"></div>
+      <div class="form-row" style="margin-top: 8px;">
+        <input type="text" id="newCatName" placeholder="Новая категория" maxlength="20">
+        <select id="newCatColor"></select>
+        <button class="btn btn-primary" style="flex:0 0 auto; padding: 0 14px;" onclick="addCategory()">+</button>
+      </div>
+    </div>
+    <div class="modal-buttons">
+      <button class="btn btn-primary" onclick="saveSettings()">Готово</button>
+    </div>
+  </div>
+</div>
+
+<!-- Модалка деталей -->
+<div class="modal-overlay" id="detailsModal">
+  <div class="modal">
+    <h3 id="detailsTitle">—</h3>
+    <div id="detailsBody" style="color: #c0c0c0; line-height: 1.6;"></div>
+    <div class="modal-buttons">
+      <button class="btn btn-secondary" onclick="closeModal('detailsModal')">Закрыть</button>
+      <button class="btn btn-danger" id="detailsDeleteBtn">Удалить</button>
+    </div>
+  </div>
+</div>
+
+<!-- Модалка импорта -->
+<div class="modal-overlay" id="importModal">
+  <div class="modal">
+    <h3>📥 Импорт задач</h3>
+    <div class="import-tabs">
+      <button class="import-tab active" data-imp="text">✉️ Из текста</button>
+      <button class="import-tab" data-imp="photo">📷 Из фото</button>
+    </div>
+
+    <div class="import-view active" id="imp-text">
+      <div class="form-group">
+        <label>Вставь текст письма / сообщения</label>
+        <textarea id="importText" rows="6" placeholder="Например:&#10;Завтра в 14:00 встреча с куратором в 305&#10;В пятницу в 10:00 лекция по физике&#10;15.11 дедлайн по курсовой&#10;Купить продукты"></textarea>
+      </div>
+      <button class="btn btn-primary" id="parseTextBtn" style="width:100%">🔍 Распознать задачи</button>
+      <div id="parsedFromText" style="margin-top:15px"></div>
+    </div>
+
+    <div class="import-view" id="imp-photo">
+      <div class="file-drop" id="fileDrop">
+        <div class="file-drop-icon">📷</div>
+        <div class="file-drop-text">Нажми или перетащи фото расписания</div>
+        <input type="file" id="fileInput" accept="image/*" style="display:none">
+      </div>
+      <div id="ocrProgress" style="display:none">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">Загрузка...</div>
+      </div>
+      <div id="recognizedBlock" style="display:none">
+        <label style="font-size:12px; color:#888; text-transform:uppercase; font-weight:600; margin-bottom:5px; display:block;">Распознанный текст:</label>
+        <div class="recognized-text" id="recognizedText"></div>
+        <button class="btn btn-primary" id="parseOcrBtn" style="width:100%; margin-top:10px">🔍 Распознать задачи</button>
+      </div>
+      <div id="parsedFromPhoto" style="margin-top:15px"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <div class="toast-title" id="toastTitle">⏰</div>
+  <div class="toast-body" id="toastBody"></div>
+</div>
+
+<script>
+// ===== ДАННЫЕ =====
+const DEFAULT_CATEGORIES = [
+  { id: 'study', name: 'Учёба', color: '#4a7dff', bg: '#2a3a5e' },
+  { id: 'home', name: 'Дом', color: '#4ade80', bg: '#1e3a2a' },
+  { id: 'work', name: 'Работа', color: '#fb923c', bg: '#3a2a1e' },
+  { id: 'personal', name: 'Личное', color: '#f472b6', bg: '#3a1e2e' },
+  { id: 'rest', name: 'Отдых', color: '#c084fc', bg: '#2e1e3a' }
+];
+const COLOR_PALETTE = ['#4a7dff','#4ade80','#fb923c','#f472b6','#c084fc','#22d3ee','#facc15','#ff6b9d'];
+const WEEKDAYS_FULL = ['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];
+const WEEKDAYS_SHORT = ['вс','пн','вт','ср','чт','пт','сб'];
+const MONTHS_GEN = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+
+let state = {
+  tasks: {},
+  templates: [],
+  categories: [...DEFAULT_CATEGORIES],
+  settings: { semesterStart: '2025-09-01', upperIsEven: true },
+  templateCompletions: {},
+  notifEnabled: false
+};
+
+function loadState() {
+  const saved = localStorage.getItem('plannerState');
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      state = { ...state, ...parsed };
+      if (!state.categories || state.categories.length === 0) state.categories = [...DEFAULT_CATEGORIES];
+    } catch(e) {}
+  }
+}
+function saveState() { localStorage.setItem('plannerState', JSON.stringify(state)); }
+function dateKey(d) { return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; }
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+function getWeekType(date) {
+  const start = new Date(state.settings.semesterStart);
+  start.setHours(0,0,0,0);
+  const d = new Date(date); d.setHours(0,0,0,0);
+  const diffDays = Math.floor((d - start) / 86400000);
+  const weekNum = Math.floor(diffDays / 7);
+  const isEven = weekNum % 2 === 0;
+  return (state.settings.upperIsEven === isEven) ? 'upper' : 'lower';
+}
+
+function updateWeekBadge() {
+  const badge = document.getElementById('weekBadge');
+  const type = getWeekType(new Date());
+  badge.textContent = type === 'upper' ? 'Верхняя неделя' : 'Нижняя неделя';
+  badge.className = 'week-badge ' + type;
+}
+
+function getCategoryById(id) { return state.categories.find(c => c.id === id) || state.categories[0]; }
+function renderCategorySelect(selectEl, selectedId) {
+  selectEl.innerHTML = '';
+  state.categories.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.id; opt.textContent = c.name;
+    if (c.id === selectedId) opt.selected = true;
+    selectEl.appendChild(opt);
+  });
+}
+function hexToBg(hex) {
+  const r = parseInt(hex.slice(1,3), 16);
+  const g = parseInt(hex.slice(3,5), 16);
+  const b = parseInt(hex.slice(5,7), 16);
+  return `rgb(${Math.floor(r*0.25)},${Math.floor(g*0.25)},${Math.floor(b*0.25)})`;
+}
+function renderCategoryList() {
+  const list = document.getElementById('categoryList');
+  list.innerHTML = '';
+  state.categories.forEach(c => {
+    const item = document.createElement('div');
+    item.className = 'category-item';
+    item.style.background = c.bg; item.style.color = c.color;
+    item.innerHTML = `<span>${c.name}</span>`;
+    const isDefault = DEFAULT_CATEGORIES.some(d => d.id === c.id);
+    if (!isDefault) {
+      const del = document.createElement('button');
+      del.className = 'del-cat'; del.textContent = '×';
+      del.onclick = () => {
+        state.categories = state.categories.filter(x => x.id !== c.id);
+        saveState(); renderCategoryList();
+      };
+      item.appendChild(del);
+    }
+    list.appendChild(item);
+  });
+}
+function addCategory() {
+  const name = document.getElementById('newCatName').value.trim();
+  const color = document.getElementById('newCatColor').value;
+  if (!name) return;
+  state.categories.push({ id: uid(), name, color, bg: hexToBg(color) });
+  saveState();
+  document.getElementById('newCatName').value = '';
+  renderCategoryList();
+}
+
+// ===== КАЛЕНДАРЬ =====
+let viewMonth = new Date().getMonth();
+let viewYear = new Date().getFullYear();
+let selectedDate = new Date();
+
+function renderCalendar() {
+  const daysEl = document.getElementById('days');
+  const monthYearEl = document.getElementById('monthYear');
+  daysEl.innerHTML = '';
+  const monthNames = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+  monthYearEl.textContent = `${monthNames[viewMonth]} ${viewYear}`;
+
+  const firstDay = new Date(viewYear, viewMonth, 1);
+  let startOffset = (firstDay.getDay() + 6) % 7;
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const daysInPrevMonth = new Date(viewYear, viewMonth, 0).getDate();
+  const today = new Date();
+
+  for (let i = startOffset - 1; i >= 0; i--) {
+    const div = document.createElement('div');
+    div.className = 'day other-month';
+    div.textContent = daysInPrevMonth - i;
+    daysEl.appendChild(div);
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    const div = document.createElement('div');
+    div.className = 'day';
+    div.textContent = d;
+    const thisDate = new Date(viewYear, viewMonth, d);
+    if (hasTasksOnDate(thisDate)) div.classList.add('has-tasks');
+    if (thisDate.toDateString() === today.toDateString()) div.classList.add('today');
+    if (thisDate.toDateString() === selectedDate.toDateString()) div.classList.add('selected');
+    div.onclick = () => {
+      selectedDate = new Date(viewYear, viewMonth, d);
+      renderCalendar(); renderTasks();
+    };
+    daysEl.appendChild(div);
+  }
+  const totalCells = startOffset + daysInMonth;
+  const remaining = (7 - (totalCells % 7)) % 7;
+  for (let d = 1; d <= remaining; d++) {
+    const div = document.createElement('div');
+    div.className = 'day other-month';
+    div.textContent = d;
+    daysEl.appendChild(div);
+  }
+}
+
+function hasTasksOnDate(date) {
+  const key = dateKey(date);
+  if (state.tasks[key] && state.tasks[key].length > 0) return true;
+  const weekday = date.getDay();
+  const weekType = getWeekType(date);
+  return state.templates.some(t => 
+    (t.weekday === weekday) && (t.weekType === 'both' || t.weekType === weekType)
+  );
+}
+
+function getTasksForDate(date) {
+  const key = dateKey(date);
+  const regular = (state.tasks[key] || []).map(t => ({ ...t, _type: 'regular' }));
+  const weekday = date.getDay();
+  const weekType = getWeekType(date);
+  const recurring = state.templates
+    .filter(t => (t.weekday === weekday) && (t.weekType === 'both' || t.weekType === weekType))
+    .map(t => ({ ...t, _type: 'template', done: !!state.templateCompletions[`${t.id}-${key}`] }));
+  
+  // Сортировка: задачи с временем по времени, задачи без времени — в конце
+  return [...regular, ...recurring].sort((a, b) => {
+    if (!a.time && !b.time) return 0;
+    if (!a.time) return 1;
+    if (!b.time) return -1;
+    return a.time.localeCompare(b.time);
+  });
+}
+
+function renderTasks() {
+  const listEl = document.getElementById('taskList');
+  const dateEl = document.getElementById('selectedDate');
+  listEl.innerHTML = '';
+  dateEl.textContent = `${selectedDate.getDate()} ${MONTHS_GEN[selectedDate.getMonth()]} ${selectedDate.getFullYear()}`;
+
+  const dayTasks = getTasksForDate(selectedDate);
+  if (dayTasks.length === 0) {
+    listEl.innerHTML = '<div class="empty">На этот день задач нет ✨</div>';
+    return;
+  }
+  dayTasks.forEach(task => listEl.appendChild(createTaskElement(task, selectedDate)));
+}
+
+function createTaskElement(task, date) {
+  const li = document.createElement('li');
+  li.className = 'task-item' + (task.done ? ' done' : '');
+
+  const check = document.createElement('input');
+  check.type = 'checkbox'; check.className = 'task-check';
+  check.checked = task.done;
+  check.onclick = e => e.stopPropagation();
+  check.onchange = () => toggleTaskDone(task, date, check.checked);
+
+  const content = document.createElement('div');
+  content.className = 'task-content';
+
+  const header = document.createElement('div');
+  header.className = 'task-header';
+  
+  const time = document.createElement('span');
+  time.className = 'task-time';
+  if (task.time) {
+    time.textContent = task.time;
+  } else {
+    time.classList.add('allday');
+    time.textContent = 'весь день';
+  }
+
+  const cat = getCategoryById(task.category);
+  const badge = document.createElement('span');
+  badge.className = 'category-badge';
+  badge.textContent = cat.name;
+  badge.style.background = cat.bg; badge.style.color = cat.color;
+
+  const title = document.createElement('span');
+  title.className = 'task-title'; title.textContent = task.title;
+
+  header.appendChild(time);
+  header.appendChild(badge);
+  if (task._type === 'template') {
+    const rec = document.createElement('span');
+    rec.className = 'recurring-badge'; rec.textContent = '🔁';
+    header.appendChild(rec);
+  }
+  header.appendChild(title);
+  content.appendChild(header);
+
+  if (task.description) {
+    const desc = document.createElement('div');
+    desc.className = 'task-desc'; desc.textContent = task.description;
+    content.appendChild(desc);
+  }
+
+  const del = document.createElement('button');
+  del.className = 'task-delete'; del.textContent = '×';
+  del.onclick = e => { e.stopPropagation(); deleteTask(task, date); };
+
+  li.onclick = () => showDetails(task, date);
+  li.appendChild(check); li.appendChild(content); li.appendChild(del);
+  return li;
+}
+
+function toggleTaskDone(task, date, done) {
+  const key = dateKey(date);
+  if (task._type === 'template') {
+    const compKey = `${task.id}-${key}`;
+    if (done) state.templateCompletions[compKey] = true;
+    else delete state.templateCompletions[compKey];
+  } else {
+    const arr = state.tasks[key] || [];
+    const t = arr.find(x => x.id === task.id);
+    if (t) t.done = done;
+  }
+  saveState(); renderTasks(); renderCalendar();
+}
+
+function deleteTask(task, date) {
+  const key = dateKey(date);
+  if (task._type === 'template') {
+    state.templates = state.templates.filter(t => t.id !== task.id);
+    Object.keys(state.templateCompletions).forEach(k => {
+      if (k.startsWith(task.id + '-')) delete state.templateCompletions[k];
+    });
+  } else {
+    state.tasks[key] = (state.tasks[key] || []).filter(t => t.id !== task.id);
+    if (state.tasks[key].length === 0) delete state.tasks[key];
+  }
+  saveState(); renderTasks(); renderCalendar(); renderAllTasks(); renderSchedule();
+}
+
+let editingTask = null;
+let editingDate = null;
+
+function openTaskModal(date, taskToEdit) {
+  editingTask = taskToEdit || null;
+  editingDate = date || selectedDate;
+  document.getElementById('taskModalTitle').textContent = taskToEdit ? 'Редактировать задачу' : 'Новая задача';
+  document.getElementById('fTitle').value = taskToEdit ? taskToEdit.title : '';
+  document.getElementById('fDesc').value = taskToEdit ? (taskToEdit.description || '') : '';
+  
+  const isAllDay = taskToEdit ? !taskToEdit.time : false;
+  document.getElementById('fAllDay').checked = isAllDay;
+  document.getElementById('timeWrapper').classList.toggle('disabled', isAllDay);
+  document.getElementById('fTime').value = taskToEdit && taskToEdit.time ? taskToEdit.time : '09:00';
+  
+  renderCategorySelect(document.getElementById('fCategory'), taskToEdit ? taskToEdit.category : state.categories[0].id);
+  
+  const isRecurring = taskToEdit && taskToEdit._type === 'template';
+  document.getElementById('fRecurring').checked = isRecurring;
+  document.getElementById('recurringOptions').classList.toggle('show', isRecurring);
+  
+  if (isRecurring) {
+    document.getElementById('fWeekday').value = taskToEdit.weekday;
+    document.getElementById('fWeekType').value = taskToEdit.weekType;
+  } else {
+    document.getElementById('fWeekday').value = editingDate.getDay();
+    document.getElementById('fWeekType').value = 'both';
+  }
+  
+  document.getElementById('taskModal').classList.add('show');
+  setTimeout(() => document.getElementById('fTitle').focus(), 100);
+}
+
+document.getElementById('fAllDay').onchange = e => {
+  document.getElementById('timeWrapper').classList.toggle('disabled', e.target.checked);
+};
+
+document.getElementById('fRecurring').onchange = e => {
+  document.getElementById('recurringOptions').classList.toggle('show', e.target.checked);
+};
+
+document.getElementById('saveTaskBtn').onclick = () => {
+  const title = document.getElementById('fTitle').value.trim();
+  if (!title) { showToast('Ошибка', 'Введите название задачи'); return; }
+  
+  const isAllDay = document.getElementById('fAllDay').checked;
+  const time = isAllDay ? '' : document.getElementById('fTime').value;
+  
+  const data = {
+    title,
+    description: document.getElementById('fDesc').value.trim(),
+    time,
+    category: document.getElementById('fCategory').value
+  };
+  
+  const isRecurring = document.getElementById('fRecurring').checked;
+  
+  if (editingTask) {
+    if (editingTask._type === 'template') {
+      const t = state.templates.find(x => x.id === editingTask.id);
+      if (t) Object.assign(t, data, {
+        weekday: parseInt(document.getElementById('fWeekday').value),
+        weekType: document.getElementById('fWeekType').value
+      });
+    } else {
+      const key = dateKey(editingDate);
+      const t = (state.tasks[key] || []).find(x => x.id === editingTask.id);
+      if (t) Object.assign(t, data);
+    }
+  } else {
+    if (isRecurring) {
+      state.templates.push({
+        id: uid(), ...data,
+        weekday: parseInt(document.getElementById('fWeekday').value),
+        weekType: document.getElementById('fWeekType').value
+      });
+    } else {
+      const key = dateKey(editingDate);
+      if (!state.tasks[key]) state.tasks[key] = [];
+      state.tasks[key].push({ id: uid(), ...data, done: false });
+    }
+  }
+  
+  saveState();
+  closeModal('taskModal');
+  renderCalendar(); renderTasks(); renderAllTasks(); renderSchedule();
+};
+
+document.getElementById('openAddTask').onclick = () => openTaskModal(selectedDate);
+document.getElementById('openAddTemplate').onclick = () => {
+  editingDate = new Date();
+  openTaskModal(null, null);
+  document.getElementById('fRecurring').checked = true;
+  document.getElementById('recurringOptions').classList.add('show');
+};
+
+function showDetails(task, date) {
+  const cat = getCategoryById(task.category);
+  document.getElementById('detailsTitle').innerHTML = 
+    `<span style="color:${cat.color}">${task.title}</span>`;
+  
+  let body = `<div style="margin-bottom: 10px;">`;
+  const timeStr = task.time ? `⏰ ${task.time}` : '🕐 Весь день';
+  body += `<div style="color:#888; font-size:13px;">${timeStr} · ${cat.name}</div>`;
+  body += `<div style="color:#888; font-size:13px;">📅 ${date.getDate()} ${MONTHS_GEN[date.getMonth()]}</div>`;
+  if (task._type === 'template') {
+    const wt = task.weekType === 'both' ? 'каждую неделю' : (task.weekType === 'upper' ? 'только верхнюю' : 'только нижнюю');
+    body += `<div style="color:#a8b4ff; font-size:13px; margin-top:4px;">🔁 ${WEEKDAYS_FULL[task.weekday]}, ${wt}</div>`;
+  }
+  body += `</div>`;
+  if (task.description) {
+    body += `<div style="background:#15151f; padding:12px; border-radius:10px; white-space:pre-wrap;">${escapeHtml(task.description)}</div>`;
+  } else {
+    body += `<div style="color:#555; font-style:italic;">Описание не указано</div>`;
+  }
+  document.getElementById('detailsBody').innerHTML = body;
+  
+  document.getElementById('detailsDeleteBtn').onclick = () => {
+    deleteTask(task, date);
+    closeModal('detailsModal');
+  };
+  document.getElementById('detailsModal').classList.add('show');
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function renderAllTasks() {
+  const container = document.getElementById('allTasksList');
+  container.innerHTML = '';
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  const allDates = new Map();
+  for (const key in state.tasks) {
+    if (state.tasks[key].length > 0) {
+      const [y, m, d] = key.split('-').map(Number);
+      allDates.set(new Date(y, m, d).toDateString(), new Date(y, m, d));
+    }
+  }
+  for (let i = 0; i < 14; i++) {
+    const d = new Date(today); d.setDate(d.getDate() + i);
+    if (hasTasksOnDate(d)) allDates.set(d.toDateString(), d);
+  }
+
+  const sorted = [...allDates.values()].sort((a, b) => a - b);
+  const overdue = sorted.filter(d => d < today);
+  const upcoming = sorted.filter(d => d >= today);
+
+  function renderGroup(dates, isOverdue) {
+    dates.forEach(date => {
+      const dayTasks = getTasksForDate(date).filter(t => !isOverdue || !t.done);
+      if (dayTasks.length === 0) return;
+
+      const group = document.createElement('div');
+      group.className = 'day-group';
+      const header = document.createElement('div');
+      header.className = 'day-group-header' + (isOverdue ? ' overdue' : '');
+      const diff = Math.round((date - today) / 86400000);
+      let label;
+      if (diff === 0) label = 'Сегодня';
+      else if (diff === 1) label = 'Завтра';
+      else if (diff === -1) label = 'Вчера';
+      else label = `${date.getDate()} ${MONTHS_GEN[date.getMonth()]}, ${WEEKDAYS_SHORT[date.getDay()]}`;
+      const weekType = getWeekType(date);
+      const weekLabel = weekType === 'upper' ? ' (верх)' : ' (низ)';
+      
+      header.innerHTML = `<span>${isOverdue ? '⚠️ ' : ''}${label}${weekLabel}</span><span class="count">${dayTasks.length} ${pluralize(dayTasks.length,'задача','задачи','задач')}</span>`;
+      group.appendChild(header);
+
+      const ul = document.createElement('ul');
+      ul.className = 'task-list';
+      dayTasks.forEach(task => ul.appendChild(createTaskElement(task, date)));
+      group.appendChild(ul);
+      container.appendChild(group);
+    });
+  }
+
+  renderGroup(overdue, true);
+  renderGroup(upcoming, false);
+
+  if (container.children.length === 0) {
+    container.innerHTML = '<div class="empty">Задач пока нет ✨</div>';
+  }
+}
+
+function renderSchedule() {
+  const container = document.getElementById('scheduleList');
+  container.innerHTML = '';
+  
+  if (state.templates.length === 0) {
+    container.innerHTML = '<div class="empty">Расписание пустое.<br>Добавь сюда свои пары и регулярные дела 🔁</div>';
+    return;
+  }
+
+  const byWeekday = {};
+  state.templates.forEach(t => {
+    if (!byWeekday[t.weekday]) byWeekday[t.weekday] = [];
+    byWeekday[t.weekday].push(t);
+  });
+
+  [1,2,3,4,5,6,0].forEach(wd => {
+    if (!byWeekday[wd]) return;
+    const group = document.createElement('div');
+    group.className = 'weekday-group';
+    const header = document.createElement('div');
+    header.className = 'weekday-header';
+    header.textContent = WEEKDAYS_FULL[wd];
+    group.appendChild(header);
+
+    const ul = document.createElement('ul');
+    ul.className = 'task-list';
+    byWeekday[wd].sort((a,b) => {
+      if (!a.time && !b.time) return 0;
+      if (!a.time) return 1;
+      if (!b.time) return -1;
+      return a.time.localeCompare(b.time);
+    }).forEach(t => {
+      const li = document.createElement('li');
+      li.className = 'task-item';
+      
+      const content = document.createElement('div');
+      content.className = 'task-content';
+      
+      const hdr = document.createElement('div');
+      hdr.className = 'task-header';
+      const time = document.createElement('span');
+      time.className = 'task-time';
+      if (t.time) {
+        time.textContent = t.time;
+      } else {
+        time.classList.add('allday');
+        time.textContent = 'весь день';
+      }
+      const cat = getCategoryById(t.category);
+      const badge = document.createElement('span');
+      badge.className = 'category-badge';
+      badge.textContent = cat.name;
+      badge.style.background = cat.bg; badge.style.color = cat.color;
+      const title = document.createElement('span');
+      title.className = 'task-title'; title.textContent = t.title;
+      const wt = document.createElement('span');
+      wt.className = 'recurring-badge';
+      wt.textContent = t.weekType === 'both' ? 'каждую' : (t.weekType === 'upper' ? 'верх' : 'низ');
+      hdr.appendChild(time); hdr.appendChild(badge); hdr.appendChild(wt); hdr.appendChild(title);
+      content.appendChild(hdr);
+      
+      if (t.description) {
+        const desc = document.createElement('div');
+        desc.className = 'task-desc'; desc.textContent = t.description;
+        content.appendChild(desc);
+      }
+      
+      li.onclick = () => {
+        editingTask = { ...t, _type: 'template' };
+        editingDate = new Date();
+        openTaskModal(editingDate, editingTask);
+      };
+      
+      const del = document.createElement('button');
+      del.className = 'task-delete'; del.textContent = '×';
+      del.onclick = e => {
+        e.stopPropagation();
+        if (confirm(`Удалить "${t.title}" из расписания?`)) {
+          state.templates = state.templates.filter(x => x.id !== t.id);
+          Object.keys(state.templateCompletions).forEach(k => {
+            if (k.startsWith(t.id + '-')) delete state.templateCompletions[k];
+          });
+          saveState(); renderSchedule(); renderCalendar(); renderTasks(); renderAllTasks();
+        }
+      };
+      
+      li.appendChild(content); li.appendChild(del);
+      ul.appendChild(li);
+    });
+    group.appendChild(ul);
+    container.appendChild(group);
+  });
+}
+
+document.getElementById('openSettings').onclick = () => {
+  document.getElementById('semesterStart').value = state.settings.semesterStart;
+  document.getElementById('upperIsEven').checked = state.settings.upperIsEven;
+  renderCategoryList();
+  const sel = document.getElementById('newCatColor');
+  sel.innerHTML = '';
+  COLOR_PALETTE.forEach((c, i) => {
+    const opt = document.createElement('option');
+    opt.value = c; opt.textContent = '●'; opt.style.color = c;
+    if (i === 0) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  document.getElementById('settingsModal').classList.add('show');
+};
+
+function saveSettings() {
+  state.settings.semesterStart = document.getElementById('semesterStart').value || '2025-09-01';
+  state.settings.upperIsEven = document.getElementById('upperIsEven').checked;
+  saveState();
+  closeModal('settingsModal');
+  updateWeekBadge(); renderCalendar(); renderTasks(); renderAllTasks();
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.onclick = e => { if (e.target === m) m.classList.remove('show'); };
+});
+
+function pluralize(n, one, two, five) {
+  let abs = Math.abs(n) % 100;
+  if (abs >= 5 && abs <= 20) return five;
+  abs = abs % 10;
+  if (abs === 1) return one;
+  if (abs >= 2 && abs <= 4) return two;
+  return five;
+}
+
+function showToast(title, body) {
+  document.getElementById('toastTitle').textContent = title;
+  document.getElementById('toastBody').textContent = body;
+  const toast = document.getElementById('toast');
+  toast.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => toast.classList.remove('show'), 3500);
+}
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.onclick = () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('view-' + tab.dataset.tab).classList.add('active');
+    if (tab.dataset.tab === 'all') renderAllTasks();
+    if (tab.dataset.tab === 'schedule') renderSchedule();
+  };
+});
+
+document.getElementById('prevMonth').onclick = () => {
+  viewMonth--;
+  if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+  renderCalendar();
+};
+document.getElementById('nextMonth').onclick = () => {
+  viewMonth++;
+  if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+  renderCalendar();
+};
+
+// ===== ИМПОРТ =====
+document.querySelectorAll('.import-tab').forEach(tab => {
+  tab.onclick = () => {
+    document.querySelectorAll('.import-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.import-view').forEach(v => v.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('imp-' + tab.dataset.imp).classList.add('active');
+  };
+});
+
+document.getElementById('openImport').onclick = () => {
+  document.getElementById('importText').value = '';
+  document.getElementById('parsedFromText').innerHTML = '';
+  document.getElementById('recognizedBlock').style.display = 'none';
+  document.getElementById('parsedFromPhoto').innerHTML = '';
+  document.getElementById('ocrProgress').style.display = 'none';
+  document.getElementById('importModal').classList.add('show');
+};
+
+// Парсер текста
+const WEEKDAY_MAP = {
+  'понедельник':1,'пн':1,'пон':1,
+  'вторник':2,'вт':2,
+  'среда':3,'ср':3,
+  'четверг':4,'чт':4,'четв':4,
+  'пятница':5,'пт':5,'пят':5,
+  'суббота':6,'сб':6,'суб':6,
+  'воскресенье':0,'вс':0,'воскр':0
+};
+
+function parseTextToTasks(text) {
+  const results = [];
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+  let currentWeekday = null;
+  let currentDate = null;
+
+  const timeRegex = /(\d{1,2})[:.\-](\d{2})/;
+  const dateRegex = /(\d{1,2})[./](\d{1,2})(?:[./](\d{2,4}))?/;
+  
+  for (let line of lines) {
+    const lower = line.toLowerCase();
+    let lineHasDate = false;
+    let lineHasWeekday = false;
+    
+    // Ищем день недели
+    for (const [word, num] of Object.entries(WEEKDAY_MAP)) {
+      if (lower.includes(word)) {
+        currentWeekday = num;
+        currentDate = null;
+        lineHasWeekday = true;
+        break;
+      }
+    }
+    
+    // Ищем "сегодня/завтра/послезавтра"
+    const today = new Date(); today.setHours(0,0,0,0);
+    if (lower.includes('сегодня')) { currentDate = new Date(today); currentWeekday = null; lineHasDate = true; }
+    else if (lower.includes('завтра')) { 
+      const d = new Date(today); d.setDate(d.getDate() + 1); 
+      currentDate = d; currentWeekday = null; lineHasDate = true;
+    }
+    else if (lower.includes('послезавтра')) {
+      const d = new Date(today); d.setDate(d.getDate() + 2);
+      currentDate = d; currentWeekday = null; lineHasDate = true;
+    }
+    
+    // Ищем дату
+    const dateMatch = line.match(dateRegex);
+    if (dateMatch) {
+      const day = parseInt(dateMatch[1]);
+      const month = parseInt(dateMatch[2]) - 1;
+      const year = dateMatch[3] ? parseInt(dateMatch[3]) : new Date().getFullYear();
+      const fullYear = year < 100 ? 2000 + year : year;
+      const d = new Date(fullYear, month, day);
+      if (!isNaN(d.getTime())) {
+        currentDate = d;
+        currentWeekday = null;
+        lineHasDate = true;
+      }
+    }
+    
+    // Ищем время
+    const timeMatch = line.match(timeRegex);
+    let time = null;
+    if (timeMatch) {
+      const h = parseInt(timeMatch[1]);
+      const m = parseInt(timeMatch[2]);
+      if (h >= 0 && h <= 23 && m >= 0 && m <= 59) {
+        time = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+      }
+    }
+    
+    // Убираем время из строки, чтобы получить название
+    let title = line;
+    if (timeMatch) title = title.replace(timeMatch[0], '');
+    title = title.replace(/[—\-–,]+$/, '').trim();
+    title = title.replace(/^[—\-–,\s]+/, '').trim();
+    if (!title) title = 'Задача';
+    
+    // Определяем категорию по ключевым словам
+    let category = 'personal';
+    const studyWords = ['пара','лекция','семинар','практика','лаб','экзамен','зачёт','зачет','курсов','диплом','универ','предмет','матем','физик','химия','информат','програм','англ','дедлайн'];
+    const homeWords = ['дом','квартир','убор','готов','покуп','магазин','продукт'];
+    const workWords = ['работ','встреч','клиент','проект','отчёт','отчет','смен'];
+    const restWords = ['отдых','кино','театр','гуля','встреч с друз','пикник','спортзал','тренир'];
+    
+    const titleLower = title.toLowerCase();
+    if (studyWords.some(w => titleLower.includes(w))) category = 'study';
+    else if (homeWords.some(w => titleLower.includes(w))) category = 'home';
+    else if (workWords.some(w => titleLower.includes(w))) category = 'work';
+    else if (restWords.some(w => titleLower.includes(w))) category = 'rest';
+    
+    // Если есть конкретная дата — это одноразовая задача, игнорируем weekday
+    if (lineHasDate) {
+      results.push({
+        title: title.slice(0, 80),
+        time,
+        category,
+        weekday: null,
+        date: currentDate ? dateKey(currentDate) : null
+      });
+    } else if (lineHasWeekday && !lineHasDate) {
+      // Только день недели — повторяющаяся задача
+      results.push({
+        title: title.slice(0, 80),
+        time,
+        category,
+        weekday: currentWeekday,
+        date: null
+      });
+    } else {
+      // Нет ни даты, ни дня недели — задача на сегодня
+      results.push({
+        title: title.slice(0, 80),
+        time,
+        category,
+        weekday: null,
+        date: dateKey(new Date())
+      });
+    }
+  }
+  
+  return results;
+}
+
+function renderParsedTasks(parsed, containerId) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  
+  if (parsed.length === 0) {
+    container.innerHTML = '<div class="empty">Не удалось найти задачи в тексте</div>';
+    return;
+  }
+  
+  parsed.forEach((task, idx) => {
+    const div = document.createElement('div');
+    div.className = 'parsed-task';
+    
+    const check = document.createElement('input');
+    check.type = 'checkbox';
+    check.checked = true;
+    check.dataset.idx = idx;
+    
+    const info = document.createElement('div');
+    info.className = 'parsed-task-info';
+    
+    let dateStr = '';
+    if (task.weekday !== null) {
+      dateStr = `🔁 ${WEEKDAYS_FULL[task.weekday]}`;
+    } else if (task.date) {
+      const [y,m,d] = task.date.split('-').map(Number);
+      dateStr = `📅 ${d} ${MONTHS_GEN[m]}`;
+    } else {
+      dateStr = `📅 Сегодня`;
+    }
+    
+    const timeStr = task.time ? `⏰ ${task.time}` : '🕐 весь день';
+    const cat = getCategoryById(task.category);
+    info.innerHTML = `<strong>${escapeHtml(task.title)}</strong><small>${timeStr} · ${dateStr} · <span style="color:${cat.color}">${cat.name}</span></small>`;
+    
+    div.appendChild(check);
+    div.appendChild(info);
+    container.appendChild(div);
+  });
+  
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'btn btn-primary';
+  saveBtn.style.width = '100%';
+  saveBtn.style.marginTop = '12px';
+  saveBtn.textContent = `✓ Добавить выбранные (${parsed.length})`;
+  saveBtn.onclick = () => {
+    const checked = container.querySelectorAll('input[type="checkbox"]:checked');
+    let added = 0;
+    checked.forEach(chk => {
+      const idx = parseInt(chk.dataset.idx);
+      const task = parsed[idx];
+      if (task.weekday !== null) {
+        state.templates.push({
+          id: uid(),
+          title: task.title,
+          description: '',
+          time: task.time,
+          category: task.category,
+          weekday: task.weekday,
+          weekType: 'both'
+        });
+      } else {
+        const key = task.date || dateKey(new Date());
+        if (!state.tasks[key]) state.tasks[key] = [];
+        state.tasks[key].push({
+          id: uid(),
+          title: task.title,
+          description: '',
+          time: task.time,
+          category: task.category,
+          done: false
+        });
+      }
+      added++;
+    });
+    saveState();
+    renderCalendar(); renderTasks(); renderAllTasks(); renderSchedule();
+    closeModal('importModal');
+    showToast('Готово!', `Добавлено задач: ${added}`);
+  };
+  container.appendChild(saveBtn);
+}
+
+document.getElementById('parseTextBtn').onclick = () => {
+  const text = document.getElementById('importText').value;
+  if (!text.trim()) { showToast('Ошибка', 'Вставь текст'); return; }
+  const parsed = parseTextToTasks(text);
+  renderParsedTasks(parsed, 'parsedFromText');
+};
+
+// OCR
+const fileDrop = document.getElementById('fileDrop');
+const fileInput = document.getElementById('fileInput');
+
+fileDrop.onclick = () => fileInput.click();
+fileDrop.ondragover = e => { e.preventDefault(); fileDrop.classList.add('drag'); };
+fileDrop.ondragleave = () => fileDrop.classList.remove('drag');
+fileDrop.ondrop = e => {
+  e.preventDefault();
+  fileDrop.classList.remove('drag');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+};
+fileInput.onchange = e => {
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+};
+
+async function handleFile(file) {
+  if (!file.type.startsWith('image/')) {
+    showToast('Ошибка', 'Это не изображение');
+    return;
+  }
+  
+  const progress = document.getElementById('ocrProgress');
+  const progressFill = document.getElementById('progressFill');
+  const progressText = document.getElementById('progressText');
+  progress.style.display = 'block';
+  document.getElementById('recognizedBlock').style.display = 'none';
+  document.getElementById('parsedFromPhoto').innerHTML = '';
+  
+  try {
+    progressText.textContent = 'Инициализация...';
+    progressFill.style.width = '10%';
+    
+    const result = await Tesseract.recognize(file, 'rus+eng', {
+      logger: m => {
+        if (m.status === 'recognizing text') {
+          const pct = Math.round(m.progress * 100);
+          progressFill.style.width = (10 + pct * 0.85) + '%';
+          progressText.textContent = `Распознавание... ${pct}%`;
+        } else {
+          progressText.textContent = m.status;
+        }
+      }
+    });
+    
+    progressFill.style.width = '100%';
+    progressText.textContent = 'Готово!';
+    
+    const text = result.data.text;
+    document.getElementById('recognizedText').textContent = text;
+    document.getElementById('recognizedBlock').style.display = 'block';
+    
+    setTimeout(() => { progress.style.display = 'none'; }, 800);
+  } catch (err) {
+    progress.style.display = 'none';
+    showToast('Ошибка OCR', err.message || 'Не удалось распознать');
+  }
+}
+
+document.getElementById('parseOcrBtn').onclick = () => {
+  const text = document.getElementById('recognizedText').textContent;
+  const parsed = parseTextToTasks(text);
+  renderParsedTasks(parsed, 'parsedFromPhoto');
+};
+
+// ===== СТАРТ =====
+loadState();
+updateWeekBadge();
+renderCalendar();
+renderTasks();
+</script>
+</body>
+</html>
