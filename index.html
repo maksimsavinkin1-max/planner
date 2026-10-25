@@ -5,275 +5,441 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0a0a14">
-<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1e1e2e">
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%236366f1' width='100' height='100' rx='20'/><text x='50' y='68' font-size='55' text-anchor='middle' fill='white'>📅</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%231e1e2e' width='100' height='100' rx='20'/><text x='50' y='68' font-size='55' text-anchor='middle' fill='%237c8cf5'>📅</text></svg>">
 <title>Планировщик</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   
   :root {
-    --bg-primary: #0a0a14;
-    --bg-secondary: #14141f;
-    --bg-tertiary: #0f0f1a;
-    --bg-glass: rgba(20, 20, 31, 0.85);
-    --border: #1f1f2e;
-    --border-hover: #252535;
-    --text-primary: #fafafa;
-    --text-secondary: #e4e4e7;
-    --text-muted: #a1a1aa;
-    --text-dim: #71717a;
+    --bg: #1e1e2e;
+    --bg-elevated: #1e1e2e;
+    --bg-inset: #1a1a28;
+    --shadow-dark: rgba(0, 0, 0, 0.6);
+    --shadow-light: rgba(255, 255, 255, 0.04);
+    --text-primary: #e4e4e7;
+    --text-secondary: #a1a1aa;
+    --text-muted: #71717a;
     --text-faint: #52525b;
-    --accent: #6366f1;
-    --accent-hover: #7c7ff5;
-    --accent-glow: rgba(99, 102, 241, 0.3);
-    --danger: #ef4444;
-    --success: #22c55e;
-    --warning: #f59e0b;
+    --accent: #7c8cf5;
+    --accent-soft: rgba(124, 140, 245, 0.15);
+    --success: #4ade80;
+    --danger: #f87171;
+    --warning: #fbbf24;
     --safe-top: env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
-    --safe-left: env(safe-area-inset-left, 0px);
-    --safe-right: env(safe-area-inset-right, 0px);
-    --tabbar-height: 64px;
+    --tabbar-height: 70px;
+    
+    --neu-flat: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
+    --neu-pressed: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
+    --neu-small: 3px 3px 6px var(--shadow-dark), -3px -3px 6px var(--shadow-light);
+    --neu-small-pressed: inset 2px 2px 4px var(--shadow-dark), inset -2px -2px 4px var(--shadow-light);
   }
   
   body.light-theme {
-    --bg-primary: #f5f5f7;
-    --bg-secondary: #ffffff;
-    --bg-tertiary: #f0f0f5;
-    --bg-glass: rgba(255, 255, 255, 0.9);
-    --border: #e5e5ea;
-    --border-hover: #d1d1d6;
-    --text-primary: #1c1c1e;
-    --text-secondary: #3a3a3c;
-    --text-muted: #636366;
-    --text-dim: #8e8e93;
-    --text-faint: #aeaeb2;
-    --accent: #5856d6;
-    --accent-hover: #6366f1;
-    --accent-glow: rgba(88, 86, 214, 0.2);
+    --bg: #e0e5ec;
+    --bg-elevated: #e0e5ec;
+    --bg-inset: #d1d9e6;
+    --shadow-dark: #a3b1c6;
+    --shadow-light: #ffffff;
+    --text-primary: #1a1a2e;
+    --text-secondary: #4a4a5a;
+    --text-muted: #6b7280;
+    --text-faint: #9ca3af;
+    --accent: #5b6bf0;
+    --accent-soft: rgba(91, 107, 240, 0.15);
   }
   
   html, body { height: 100%; overscroll-behavior: none; }
   
   body {
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro", "Segoe UI", sans-serif;
-    background: var(--bg-primary);
+    background: var(--bg);
     color: var(--text-secondary);
     font-size: 15px;
     line-height: 1.5;
-    transition: background 0.3s, color 0.3s;
     padding-top: var(--safe-top);
     padding-bottom: calc(var(--safe-bottom) + var(--tabbar-height));
-    padding-left: var(--safe-left);
-    padding-right: var(--safe-right);
+    transition: background 0.3s;
   }
   
-  .container { max-width: 560px; margin: 0 auto; padding: 16px 16px 20px; }
+  .container { max-width: 560px; margin: 0 auto; padding: 20px 16px; }
   
-  .top-bar {
-    display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 14px; gap: 10px; padding: 0 4px;
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 0 4px;
   }
   
-  h1 {
-    font-size: 22px; color: var(--text-primary); font-weight: 700; letter-spacing: -0.5px;
-    background: linear-gradient(135deg, var(--accent), #a855f7);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  .logo {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--accent);
+    letter-spacing: -0.5px;
   }
+  
+  .header-actions { display: flex; gap: 10px; align-items: center; }
   
   .week-badge {
-    padding: 7px 14px; border-radius: 12px; font-weight: 600; font-size: 12px;
-    background: var(--bg-tertiary); color: var(--text-muted); border: 1px solid var(--border);
+    padding: 8px 14px;
+    border-radius: 14px;
+    font-weight: 600;
+    font-size: 12px;
+    background: var(--bg-elevated);
+    color: var(--text-muted);
+    box-shadow: var(--neu-small);
   }
-  .week-badge.upper {
-    background: linear-gradient(135deg, rgba(96, 165, 250, 0.2), rgba(96, 165, 250, 0.1));
-    color: #60a5fa; border-color: rgba(96, 165, 250, 0.3);
-  }
-  .week-badge.lower {
-    background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(168, 85, 247, 0.1));
-    color: #a855f7; border-color: rgba(168, 85, 247, 0.3);
-  }
-  
-  .top-actions { display: flex; gap: 6px; }
+  .week-badge.upper { color: #60a5fa; }
+  .week-badge.lower { color: #c084fc; }
   
   .icon-btn {
-    background: var(--bg-tertiary); border: 1px solid var(--border); color: var(--text-muted);
-    cursor: pointer; font-size: 18px; width: 44px; height: 44px; border-radius: 12px;
-    display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+    background: var(--bg-elevated);
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 20px;
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--neu-small);
+    transition: all 0.15s;
   }
-  .icon-btn:active { transform: scale(0.92); background: var(--border-hover); }
+  .icon-btn:active {
+    box-shadow: var(--neu-small-pressed);
+    transform: scale(0.95);
+  }
   
   .view { display: none; }
-  .view.active { display: block; animation: fadeIn 0.25s; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .view.active { display: block; animation: fadeIn 0.3s; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   
+  /* Календарь */
   .calendar-header {
-    display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding: 0 4px;
   }
-  .calendar-header button {
-    background: var(--bg-tertiary); color: var(--text-secondary); border: 1px solid var(--border);
-    width: 44px; height: 44px; border-radius: 12px; font-size: 20px; cursor: pointer;
-  }
-  .calendar-header button:active { transform: scale(0.92); }
   .calendar-header h2 {
-    font-size: 17px; text-transform: capitalize; color: var(--text-primary); font-weight: 700;
+    font-size: 18px;
+    text-transform: capitalize;
+    color: var(--text-primary);
+    font-weight: 700;
   }
+  .calendar-nav {
+    background: var(--bg-elevated);
+    border: none;
+    color: var(--text-secondary);
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    font-size: 20px;
+    cursor: pointer;
+    box-shadow: var(--neu-small);
+  }
+  .calendar-nav:active { box-shadow: var(--neu-small-pressed); }
   
+  /* Переключатель месяц/неделя */
   .view-switcher {
-    display: flex; gap: 4px; margin-bottom: 12px;
-    background: var(--bg-tertiary); padding: 4px; border-radius: 12px;
-    border: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    padding: 6px;
+    background: var(--bg-elevated);
+    border-radius: 16px;
+    box-shadow: var(--neu-pressed);
   }
   .view-switcher-btn {
-    flex: 1; padding: 8px; border: none; background: transparent;
-    border-radius: 9px; font-size: 13px; font-weight: 600;
-    color: var(--text-dim); cursor: pointer; transition: all 0.2s;
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background: transparent;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
   }
   .view-switcher-btn.active {
-    background: var(--bg-secondary); color: var(--text-primary);
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    background: var(--bg-elevated);
+    color: var(--accent);
+    box-shadow: var(--neu-small);
   }
   
-  .weekdays, .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .weekdays, .days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+  }
   .weekdays div {
-    text-align: center; font-size: 11px; color: var(--text-faint); padding: 8px 0;
-    font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-faint);
+    padding: 8px 0;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
   }
   .day {
-    aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
-    border-radius: 10px; font-size: 14px; cursor: pointer; position: relative;
-    color: var(--text-muted); font-weight: 500; min-height: 40px;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    font-size: 14px;
+    cursor: pointer;
+    position: relative;
+    color: var(--text-secondary);
+    font-weight: 500;
+    background: var(--bg-elevated);
+    box-shadow: var(--neu-small);
+    transition: all 0.15s;
   }
-  .day:active { transform: scale(0.92); }
-  .day.other-month { color: var(--text-faint); }
+  .day:active { box-shadow: var(--neu-small-pressed); transform: scale(0.95); }
+  .day.other-month {
+    background: transparent;
+    box-shadow: none;
+    color: var(--text-faint);
+  }
   .day.holiday {
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.05));
-    color: #fca5a5;
+    color: var(--danger);
+    background: var(--bg-elevated);
   }
-  .day.today { background: linear-gradient(135deg, var(--accent), #a855f7); color: #fff; font-weight: 700; }
+  .day.today {
+    color: #fff;
+    background: var(--accent);
+    box-shadow: 0 4px 12px rgba(124, 140, 245, 0.4);
+    font-weight: 700;
+  }
   .day.selected {
-    background: var(--bg-tertiary); color: var(--text-primary);
-    outline: 2px solid var(--accent); outline-offset: -2px; font-weight: 700;
+    color: var(--accent);
+    box-shadow: var(--neu-pressed);
+    font-weight: 700;
   }
-  .day.today.selected { background: linear-gradient(135deg, var(--accent), #a855f7); outline: 2px solid #a5b4fc; }
+  .day.today.selected {
+    color: #fff;
+    background: var(--accent);
+    box-shadow: 0 4px 12px rgba(124, 140, 245, 0.4);
+  }
   .day-dots {
-    position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%);
-    display: flex; gap: 2px;
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 2px;
   }
   .day-dot { width: 4px; height: 4px; border-radius: 50%; }
   
-  .week-view {
-    display: none;
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    overflow: hidden;
-  }
+  /* ===== ВИД НЕДЕЛЯ ===== */
+  .week-view { display: none; }
   .week-view.active { display: block; }
   
+  .week-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding: 0 4px;
+  }
+  .week-nav h2 {
+    font-size: 16px;
+    color: var(--text-primary);
+    font-weight: 700;
+  }
+  
+  /* Мобильный вид (вертикальный список) */
+  @media (max-width: 767px) {
+    .week-list { display: block; }
+    .week-grid-desktop { display: none; }
+  }
+  
+  /* Десктоп вид (сетка) */
+  @media (min-width: 768px) {
+    .week-list { display: none; }
+    .week-grid-desktop { display: block; }
+  }
+  
+  /* Мобильный вертикальный список */
+  .week-day-card {
+    background: var(--bg-elevated);
+    border-radius: 18px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: var(--neu-flat);
+  }
+  .week-day-card.today {
+    box-shadow: var(--neu-flat), 0 0 0 2px var(--accent);
+  }
+  .week-day-card.holiday {
+    opacity: 0.7;
+  }
+  .week-day-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--bg-inset);
+  }
+  .week-day-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-transform: capitalize;
+  }
+  .week-day-date {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+  .week-day-card.today .week-day-title { color: var(--accent); }
+  
+  .week-pair {
+    display: flex;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--bg-inset);
+    cursor: pointer;
+  }
+  .week-pair:last-child { border-bottom: none; }
+  .week-pair:active { opacity: 0.7; }
+  
+  .week-pair-time {
+    flex-shrink: 0;
+    width: 52px;
+    text-align: center;
+  }
+  .week-pair-time .t-start {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+  .week-pair-time .t-end {
+    font-size: 10px;
+    color: var(--text-faint);
+    font-variant-numeric: tabular-nums;
+  }
+  .week-pair-info { flex: 1; min-width: 0; }
+  .week-pair-title {
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 600;
+    line-height: 1.3;
+    margin-bottom: 2px;
+  }
+  .week-pair-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .week-pair-type {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 700;
+    margin-right: 4px;
+  }
+  .week-pair-type.upper { background: rgba(96, 165, 250, 0.15); color: #60a5fa; }
+  .week-pair-type.lower { background: rgba(192, 132, 252, 0.15); color: #c084fc; }
+  
+  .week-empty {
+    text-align: center;
+    color: var(--text-faint);
+    font-size: 12px;
+    padding: 12px 0;
+    font-style: italic;
+  }
+  
+  /* Десктоп сетка */
   .week-grid-wrapper {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    background: var(--bg-elevated);
+    border-radius: 18px;
+    box-shadow: var(--neu-flat);
+    padding: 4px;
   }
-  
   .week-grid {
     display: grid;
-    grid-template-columns: 50px repeat(7, minmax(110px, 1fr));
-    min-width: 840px;
+    grid-template-columns: 60px repeat(7, minmax(130px, 1fr));
+    min-width: 1000px;
   }
-  
   .week-corner {
-    background: var(--bg-secondary);
-    border-bottom: 1px solid var(--border);
-    border-right: 1px solid var(--border);
-    padding: 8px 4px;
-    font-size: 10px;
+    padding: 12px 6px;
+    font-size: 11px;
     color: var(--text-faint);
     text-align: center;
-    position: sticky;
-    top: 0;
-    z-index: 3;
+    font-weight: 700;
   }
-  
-  .week-day-header {
-    background: var(--bg-secondary);
-    border-bottom: 1px solid var(--border);
-    border-right: 1px solid var(--border);
-    padding: 8px 4px;
+  .week-day-header-desktop {
+    padding: 12px 6px;
     text-align: center;
-    position: sticky;
-    top: 0;
-    z-index: 2;
     cursor: pointer;
-    transition: background 0.15s;
+    border-radius: 10px;
+    margin: 2px;
   }
-  .week-day-header:last-child { border-right: none; }
-  .week-day-header:active { background: var(--border-hover); }
-  .week-day-header.today {
-    background: linear-gradient(135deg, var(--accent), #a855f7);
+  .week-day-header-desktop:active { background: var(--bg-inset); }
+  .week-day-header-desktop.today {
+    background: var(--accent);
     color: #fff;
   }
-  .week-day-header.holiday {
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.05));
-    color: #fca5a5;
-  }
-  .week-day-name {
+  .week-day-header-desktop .dn {
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.3px;
-    color: var(--text-dim);
+    color: var(--text-muted);
   }
-  .week-day-header.today .week-day-name { color: #fff; }
-  .week-day-num {
-    font-size: 18px;
-    font-weight: 700;
+  .week-day-header-desktop.today .dn { color: #fff; }
+  .week-day-header-desktop .dd {
+    font-size: 20px;
+    font-weight: 800;
     color: var(--text-primary);
     margin-top: 2px;
   }
-  .week-day-header.today .week-day-num { color: #fff; }
+  .week-day-header-desktop.today .dd { color: #fff; }
   
-  .week-time-col {
-    background: var(--bg-secondary);
-    border-right: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    padding: 6px 4px;
-    font-size: 10px;
-    color: var(--text-dim);
+  .week-time-col-desktop {
+    padding: 8px 4px;
+    font-size: 11px;
+    color: var(--text-muted);
     text-align: center;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    min-height: 70px;
+    min-height: 80px;
+    border-top: 1px solid var(--bg-inset);
   }
-  .week-time-col:last-child { border-bottom: none; }
-  .week-time-col .time-start { color: var(--accent); font-weight: 700; font-size: 11px; }
-  .week-time-col .time-end { color: var(--text-faint); font-size: 9px; margin-top: 2px; }
+  .week-time-col-desktop .ts { color: var(--accent); font-weight: 700; font-size: 12px; }
+  .week-time-col-desktop .te { color: var(--text-faint); font-size: 10px; margin-top: 2px; }
   
-  .week-cell {
-    border-right: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    padding: 3px;
-    min-height: 70px;
+  .week-cell-desktop {
+    padding: 4px;
+    min-height: 80px;
+    border-top: 1px solid var(--bg-inset);
     position: relative;
     cursor: pointer;
-    transition: background 0.15s;
   }
-  .week-cell:nth-child(8n) { border-right: none; }
-  .week-cell:last-child { border-bottom: none; }
-  .week-cell:active { background: var(--border-hover); }
-  .week-cell.holiday-cell {
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.05), rgba(239, 68, 68, 0.02));
-  }
+  .week-cell-desktop:active { background: var(--bg-inset); }
   
-  .week-task {
+  .week-task-chip {
     font-size: 10px;
-    padding: 3px 5px;
-    border-radius: 5px;
+    padding: 4px 6px;
+    border-radius: 6px;
     margin-bottom: 2px;
     color: #fff;
     font-weight: 600;
@@ -284,337 +450,626 @@
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
-    transition: transform 0.15s;
   }
-  .week-task:active { transform: scale(0.95); }
-  .week-task .task-t { font-size: 9px; opacity: 0.85; display: block; }
-  
-  .week-task.done { opacity: 0.4; text-decoration: line-through; }
-  
-  .week-more {
-    font-size: 9px;
-    color: var(--text-dim);
-    text-align: center;
-    padding: 2px;
-    font-weight: 600;
-  }
-  
-  @media (max-width: 600px) {
-    .week-grid { min-width: 700px; }
-    .week-time-col { min-height: 60px; padding: 4px 2px; }
-    .week-cell { min-height: 60px; padding: 2px; }
-    .week-task { font-size: 9px; padding: 2px 4px; }
-    .week-day-num { font-size: 16px; }
-  }
+  .week-task-chip:active { transform: scale(0.95); }
+  .week-task-chip .ct { font-size: 9px; opacity: 0.85; display: block; }
   
   .tasks-section {
-    margin-top: 20px;
-    padding-top: 16px;
-    border-top: 1px solid var(--border);
-    padding-bottom: 20px; /* Отступ чтобы хотбар не перекрывал */
+    margin-top: 24px;
+    padding: 20px;
+    background: var(--bg-elevated);
+    border-radius: 20px;
+    box-shadow: var(--neu-flat);
+    margin-bottom: 20px;
   }
-  .selected-date { font-size: 16px; font-weight: 700; margin-bottom: 12px; color: var(--text-primary); }
+  .selected-date {
+    font-size: 17px;
+    font-weight: 700;
+    margin-bottom: 14px;
+    color: var(--text-primary);
+  }
   
   .action-btn {
-    width: 100%; padding: 14px; background: var(--bg-tertiary);
-    border: 1px dashed var(--border); border-radius: 14px;
-    color: var(--text-muted); font-size: 14px; font-weight: 600; cursor: pointer;
-    margin-bottom: 10px; min-height: 48px; transition: all 0.15s;
+    width: 100%;
+    padding: 14px;
+    background: var(--bg-elevated);
+    border: none;
+    border-radius: 14px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 10px;
+    min-height: 50px;
+    box-shadow: var(--neu-small);
+    transition: all 0.15s;
   }
-  .action-btn:active { transform: scale(0.98); background: var(--border-hover); border-color: var(--accent); }
+  .action-btn:active {
+    box-shadow: var(--neu-small-pressed);
+    transform: scale(0.98);
+    color: var(--accent);
+  }
   
-  .task-list { list-style: none; padding-bottom: 80px; /* Дополнительный отступ внизу */ }
+  .task-list { list-style: none; position: relative; overflow: hidden; }
+  
   .task-item {
-    display: flex; align-items: flex-start; gap: 10px; padding: 14px;
-    background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 14px;
-    margin-bottom: 8px; cursor: pointer; transition: all 0.15s;
-    animation: slideIn 0.25s; position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px;
+    background: var(--bg-elevated);
+    border-radius: 16px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    box-shadow: var(--neu-small);
+    transition: all 0.15s;
+    position: relative;
+    overflow: hidden;
+    touch-action: pan-y;
+    user-select: none;
   }
-  @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
-  .task-item:active { transform: scale(0.98); }
+  .task-item:active { box-shadow: var(--neu-small-pressed); }
   .task-item.done { opacity: 0.4; }
   .task-item.done .task-title { text-decoration: line-through; }
   .task-item.dragging { opacity: 0.5; }
   .task-item.drag-over {
-    border-color: var(--accent);
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1));
+    box-shadow: var(--neu-small), 0 0 0 2px var(--accent);
   }
   
-  .task-check { width: 24px; height: 24px; cursor: pointer; accent-color: var(--accent); margin-top: 2px; flex-shrink: 0; }
+  /* Свайп-фон */
+  .swipe-bg {
+    position: absolute;
+    top: 0; bottom: 0;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    font-size: 18px;
+    color: #fff;
+    font-weight: 700;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+    border-radius: 16px;
+  }
+  .swipe-bg.delete { right: 0; background: var(--danger); }
+  .swipe-bg.complete { left: 0; background: var(--success); }
+  
+  .task-check {
+    width: 26px;
+    height: 26px;
+    cursor: pointer;
+    accent-color: var(--accent);
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
   .task-content { flex: 1; min-width: 0; }
-  .task-header { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 2px; }
-  .task-time { font-size: 13px; color: var(--accent); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .task-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+  }
+  .task-time {
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
   .task-time.allday { color: var(--text-faint); font-style: italic; font-weight: 500; }
-  .task-title { font-size: 15px; color: var(--text-primary); font-weight: 600; word-break: break-word; }
-  .task-desc { font-size: 13px; color: var(--text-dim); margin-top: 4px; line-height: 1.4; word-break: break-word; }
-  .task-meta { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; align-items: center; }
-  .category-badge { font-size: 11px; padding: 3px 8px; border-radius: 8px; font-weight: 700; }
+  .task-title {
+    font-size: 15px;
+    color: var(--text-primary);
+    font-weight: 600;
+    word-break: break-word;
+  }
+  .task-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    line-height: 1.4;
+    word-break: break-word;
+  }
+  .task-meta { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; align-items: center; }
+  .category-badge {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 8px;
+    font-weight: 700;
+  }
   .recurring-badge {
-    font-size: 11px; padding: 3px 8px;
-    background: linear-gradient(135deg, rgba(96, 165, 250, 0.2), rgba(96, 165, 250, 0.1));
-    color: #60a5fa; border-radius: 8px; font-weight: 700;
+    font-size: 11px;
+    padding: 3px 8px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-radius: 8px;
+    font-weight: 700;
   }
   .pomodoro-btn {
-    font-size: 11px; padding: 3px 8px;
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.1));
-    color: #ef4444; border-radius: 8px; font-weight: 700; cursor: pointer; border: none;
+    font-size: 11px;
+    padding: 3px 8px;
+    background: rgba(248, 113, 113, 0.15);
+    color: var(--danger);
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
   }
-  .task-actions { display: flex; gap: 2px; flex-shrink: 0; }
+  .task-actions { display: flex; gap: 4px; flex-shrink: 0; }
   .task-action-btn {
-    background: none; border: none; color: var(--text-faint); font-size: 22px;
-    cursor: pointer; padding: 6px; border-radius: 8px;
-    min-width: 36px; min-height: 36px;
-    display: flex; align-items: center; justify-content: center;
+    background: var(--bg-elevated);
+    border: none;
+    color: var(--text-muted);
+    font-size: 18px;
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--neu-small);
   }
-  .task-action-btn:active { transform: scale(0.9); }
+  .task-action-btn:active { box-shadow: var(--neu-small-pressed); }
   .task-action-btn.delete:active { color: var(--danger); }
   
   .empty { text-align: center; color: var(--text-faint); padding: 40px 0; font-size: 14px; }
   
   .day-group { margin-bottom: 20px; }
   .day-group-header {
-    font-size: 12px; font-weight: 700; color: var(--text-muted);
-    text-transform: uppercase; letter-spacing: 0.5px;
-    margin-bottom: 10px; padding-bottom: 8px;
-    border-bottom: 1px solid var(--border);
-    display: flex; justify-content: space-between; align-items: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+    padding: 10px 14px;
+    background: var(--bg-elevated);
+    border-radius: 12px;
+    box-shadow: var(--neu-small);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
   .day-group-header.overdue { color: var(--danger); }
   .day-group-header .count { font-size: 11px; color: var(--text-faint); font-weight: 500; text-transform: none; }
   
   .schedule-intro {
-    background: var(--bg-tertiary); border: 1px solid var(--border);
-    border-radius: 14px; padding: 14px; margin-bottom: 14px;
-    font-size: 13px; color: var(--text-dim); line-height: 1.5;
+    background: var(--bg-elevated);
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 14px;
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    box-shadow: var(--neu-small);
   }
   .weekday-group { margin-bottom: 18px; }
   .weekday-header {
-    display: flex; justify-content: space-between; align-items: center;
-    font-size: 14px; font-weight: 700; color: var(--text-primary);
-    margin-bottom: 10px; padding: 12px 14px;
-    background: linear-gradient(135deg, var(--bg-tertiary), var(--bg-secondary));
-    border-radius: 12px; border: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+    padding: 12px 16px;
+    background: var(--bg-elevated);
+    border-radius: 14px;
+    box-shadow: var(--neu-flat);
   }
-  .weekday-header .count { font-size: 12px; color: var(--text-dim); font-weight: 500; }
+  .weekday-header .count { font-size: 12px; color: var(--text-muted); font-weight: 500; }
   .week-type-divider {
-    font-size: 11px; color: var(--text-faint); text-transform: uppercase;
-    letter-spacing: 0.5px; margin: 10px 0 6px 4px; font-weight: 700;
+    font-size: 11px;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 10px 0 6px 4px;
+    font-weight: 700;
   }
   .week-type-divider.upper { color: #60a5fa; }
-  .week-type-divider.lower { color: #a855f7; }
+  .week-type-divider.lower { color: #c084fc; }
   
+  /* Таб-бар */
   .tabbar {
-    position: fixed; bottom: 0; left: 0; right: 0;
-    background: var(--bg-glass); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    border-top: 1px solid var(--border); display: flex;
-    padding: 8px 8px calc(8px + var(--safe-bottom)); z-index: 50; gap: 4px;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--bg);
+    display: flex;
+    padding: 10px 12px calc(10px + var(--safe-bottom));
+    z-index: 50;
+    gap: 8px;
+    justify-content: center;
+  }
+  .tabbar-inner {
+    display: flex;
+    gap: 8px;
+    background: var(--bg-elevated);
+    padding: 8px;
+    border-radius: 20px;
+    box-shadow: var(--neu-flat);
   }
   .tabbar-btn {
-    flex: 1; background: none; border: none; color: var(--text-dim);
-    cursor: pointer; padding: 8px 4px; border-radius: 12px;
-    display: flex; flex-direction: column; align-items: center; gap: 2px;
-    font-size: 10px; font-weight: 600; transition: all 0.2s; min-height: 56px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 10px 14px;
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    font-size: 10px;
+    font-weight: 600;
+    min-width: 64px;
+    transition: all 0.2s;
   }
   .tabbar-btn .tab-icon { font-size: 22px; }
   .tabbar-btn.active {
     color: var(--accent);
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.1));
+    background: var(--bg-elevated);
+    box-shadow: var(--neu-small-pressed);
   }
   .tabbar-btn:active { transform: scale(0.92); }
   
+  /* Модалки */
   .modal-overlay {
-    display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-    z-index: 100; align-items: flex-end; justify-content: center; padding: 0;
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 100;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0;
   }
   .modal-overlay.show { display: flex; animation: fadeIn 0.2s; }
   .modal {
-    background: var(--bg-secondary); border-top: 1px solid var(--border);
-    border-radius: 24px 24px 0 0; padding: 24px 20px calc(24px + var(--safe-bottom));
-    width: 100%; max-width: 560px; max-height: 92vh; overflow-y: auto;
+    background: var(--bg);
+    border-radius: 28px 28px 0 0;
+    padding: 20px 20px calc(24px + var(--safe-bottom));
+    width: 100%;
+    max-width: 560px;
+    max-height: 92vh;
+    overflow-y: auto;
     animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.3);
   }
   @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
   @media (min-width: 600px) {
     .modal-overlay { align-items: center; padding: 20px; }
-    .modal { border-radius: 24px; border: 1px solid var(--border); max-height: 90vh; }
-    @keyframes slideUp { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .modal {
+      border-radius: 28px;
+      max-height: 90vh;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    @keyframes slideUp {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
   }
-  .modal-handle { width: 40px; height: 4px; background: var(--border-hover); border-radius: 2px; margin: -8px auto 16px; }
-  .modal h3 { font-size: 20px; color: var(--text-primary); margin-bottom: 18px; font-weight: 700; }
+  .modal-handle {
+    width: 44px;
+    height: 5px;
+    background: var(--bg-inset);
+    border-radius: 3px;
+    margin: -4px auto 16px;
+    box-shadow: var(--neu-small-pressed);
+  }
+  .modal h3 {
+    font-size: 20px;
+    color: var(--text-primary);
+    margin-bottom: 18px;
+    font-weight: 700;
+  }
   .form-group { margin-bottom: 14px; }
   .form-group label {
-    display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 6px;
-    text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;
+    display: block;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.5px;
   }
   .form-group input, .form-group textarea, .form-group select {
-    width: 100%; background: var(--bg-tertiary); color: var(--text-secondary);
-    border: 1px solid var(--border); padding: 13px 14px; border-radius: 12px;
-    font-size: 16px; outline: none; font-family: inherit; min-height: 48px;
+    width: 100%;
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    border: none;
+    padding: 14px 16px;
+    border-radius: 14px;
+    font-size: 16px;
+    outline: none;
+    font-family: inherit;
+    min-height: 50px;
+    box-shadow: var(--neu-pressed);
   }
-  .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--accent); }
-  .form-group textarea { resize: vertical; min-height: 80px; }
+  .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+    box-shadow: var(--neu-pressed), 0 0 0 2px var(--accent);
+  }
+  .form-group textarea { resize: vertical; min-height: 90px; }
   .form-row { display: flex; gap: 10px; }
   .form-row > * { flex: 1; }
   .checkbox-group {
-    display: flex; align-items: center; gap: 10px;
-    padding: 14px 16px; background: var(--bg-tertiary);
-    border: 1px solid var(--border); border-radius: 12px; cursor: pointer; min-height: 48px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    background: var(--bg-elevated);
+    border-radius: 14px;
+    cursor: pointer;
+    min-height: 50px;
+    box-shadow: var(--neu-small);
   }
+  .checkbox-group:active { box-shadow: var(--neu-small-pressed); }
   .checkbox-group input { width: auto; }
   .checkbox-group label {
-    margin: 0; text-transform: none; font-size: 14px;
-    color: var(--text-secondary); cursor: pointer; font-weight: 500;
+    margin: 0;
+    text-transform: none;
+    font-size: 14px;
+    color: var(--text-primary);
+    cursor: pointer;
+    font-weight: 500;
+    letter-spacing: 0;
   }
   .recurring-options { display: none; margin-top: 10px; }
   .recurring-options.show { display: block; }
   .time-input-wrapper.disabled input { opacity: 0.35; pointer-events: none; }
   .modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
   .btn {
-    flex: 1; padding: 14px; border: none; border-radius: 12px;
-    font-size: 15px; font-weight: 700; cursor: pointer; min-height: 48px; transition: all 0.15s;
+    flex: 1;
+    padding: 14px;
+    border: none;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    min-height: 50px;
+    transition: all 0.15s;
   }
   .btn:active { transform: scale(0.97); }
-  .btn-primary { background: linear-gradient(135deg, var(--accent), #a855f7); color: #fff; }
-  .btn-secondary { background: var(--bg-tertiary); color: var(--text-muted); border: 1px solid var(--border); }
-  .btn-danger { background: linear-gradient(135deg, #dc2626, #b91c1c); color: #fff; }
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: var(--neu-small), 0 4px 12px rgba(124, 140, 245, 0.3);
+  }
+  .btn-secondary {
+    background: var(--bg-elevated);
+    color: var(--text-secondary);
+    box-shadow: var(--neu-small);
+  }
+  .btn-danger {
+    background: var(--danger);
+    color: #fff;
+    box-shadow: var(--neu-small);
+  }
   
   .category-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
   .category-item {
-    display: flex; align-items: center; gap: 5px; padding: 6px 10px;
-    border-radius: 10px; font-size: 12px; font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 10px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
   }
   .category-item .del-cat {
-    background: none; border: none; color: inherit;
-    opacity: 0.6; cursor: pointer; font-size: 16px; padding: 0 2px;
+    background: none;
+    border: none;
+    color: inherit;
+    opacity: 0.6;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0 2px;
   }
   
   .import-tabs {
-    display: flex; gap: 4px; margin-bottom: 14px;
-    background: var(--bg-tertiary); padding: 4px; border-radius: 12px;
+    display: flex;
+    gap: 4px;
+    margin-bottom: 14px;
+    background: var(--bg-elevated);
+    padding: 4px;
+    border-radius: 14px;
+    box-shadow: var(--neu-pressed);
   }
   .import-tab {
-    flex: 1; padding: 10px; border: none; background: transparent;
-    border-radius: 9px; font-size: 13px; font-weight: 700;
-    color: var(--text-dim); cursor: pointer; min-height: 44px;
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background: transparent;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-muted);
+    cursor: pointer;
+    min-height: 44px;
   }
-  .import-tab.active { background: var(--bg-secondary); color: var(--text-primary); }
+  .import-tab.active {
+    background: var(--bg-elevated);
+    color: var(--accent);
+    box-shadow: var(--neu-small);
+  }
   .import-view { display: none; }
   .import-view.active { display: block; }
   .file-drop {
-    border: 2px dashed var(--border); border-radius: 14px;
-    padding: 28px 16px; text-align: center; cursor: pointer;
-    margin-bottom: 12px; min-height: 120px;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border: 2px dashed var(--text-faint);
+    border-radius: 16px;
+    padding: 28px 16px;
+    text-align: center;
+    cursor: pointer;
+    margin-bottom: 12px;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-elevated);
+    box-shadow: var(--neu-pressed);
   }
-  .file-drop.drag { border-color: var(--accent); background: var(--bg-tertiary); }
+  .file-drop.drag { border-color: var(--accent); }
   .file-drop-icon { font-size: 36px; margin-bottom: 8px; }
-  .file-drop-text { color: var(--text-dim); font-size: 13px; }
-  .progress-bar { height: 6px; background: var(--bg-tertiary); border-radius: 3px; overflow: hidden; margin: 10px 0; }
-  .progress-fill {
-    height: 100%; background: linear-gradient(90deg, var(--accent), #a855f7);
-    width: 0%; transition: width 0.3s;
+  .file-drop-text { color: var(--text-muted); font-size: 13px; }
+  .progress-bar {
+    height: 6px;
+    background: var(--bg-inset);
+    border-radius: 3px;
+    overflow: hidden;
+    margin: 10px 0;
+    box-shadow: var(--neu-pressed);
   }
-  .progress-text { font-size: 12px; color: var(--text-dim); text-align: center; }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width 0.3s;
+  }
+  .progress-text { font-size: 12px; color: var(--text-muted); text-align: center; }
   .recognized-text {
-    background: var(--bg-tertiary); border: 1px solid var(--border);
-    border-radius: 12px; padding: 12px; margin: 10px 0;
-    max-height: 150px; overflow-y: auto; font-size: 13px;
-    color: var(--text-muted); white-space: pre-wrap; font-family: monospace;
+    background: var(--bg-elevated);
+    border-radius: 14px;
+    padding: 14px;
+    margin: 10px 0;
+    max-height: 150px;
+    overflow-y: auto;
+    font-size: 13px;
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+    font-family: monospace;
+    box-shadow: var(--neu-pressed);
   }
   .parsed-task {
-    background: var(--bg-tertiary); border: 1px solid var(--border);
-    border-radius: 12px; padding: 12px; margin-bottom: 8px;
-    display: flex; align-items: flex-start; gap: 10px;
+    background: var(--bg-elevated);
+    border-radius: 14px;
+    padding: 12px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    box-shadow: var(--neu-small);
   }
   .parsed-task input[type="checkbox"] { accent-color: var(--accent); margin-top: 2px; width: 20px; height: 20px; }
   .parsed-task-info { flex: 1; font-size: 13px; }
   .parsed-task-info strong { color: var(--text-primary); font-weight: 700; display: block; margin-bottom: 3px; }
-  .parsed-task-info small { color: var(--text-dim); display: block; line-height: 1.4; }
+  .parsed-task-info small { color: var(--text-muted); display: block; line-height: 1.4; }
   
   .toast {
-    position: fixed; top: calc(20px + var(--safe-top)); left: 50%;
+    position: fixed;
+    top: calc(20px + var(--safe-top));
+    left: 50%;
     transform: translateX(-50%) translateY(-150%);
-    background: var(--bg-glass); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    color: var(--text-secondary); padding: 14px 20px; border-radius: 14px;
-    border: 1px solid var(--border); max-width: calc(100% - 40px); z-index: 1000;
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    padding: 14px 20px;
+    border-radius: 16px;
+    max-width: calc(100% - 40px);
+    z-index: 1000;
     transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    font-size: 14px; box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    font-size: 14px;
+    box-shadow: var(--neu-flat);
   }
   .toast.show { transform: translateX(-50%) translateY(0); }
   .toast .toast-title { font-weight: 700; color: var(--accent); margin-bottom: 3px; font-size: 13px; }
   
   .search-bar { display: flex; gap: 8px; margin-bottom: 12px; }
   .search-input {
-    flex: 1; background: var(--bg-tertiary); color: var(--text-secondary);
-    border: 1px solid var(--border); padding: 12px 14px; border-radius: 12px;
-    font-size: 15px; outline: none; font-family: inherit; min-height: 48px;
+    flex: 1;
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    border: none;
+    padding: 12px 16px;
+    border-radius: 14px;
+    font-size: 15px;
+    outline: none;
+    font-family: inherit;
+    min-height: 50px;
+    box-shadow: var(--neu-pressed);
   }
   .filter-select {
-    background: var(--bg-tertiary); color: var(--text-secondary);
-    border: 1px solid var(--border); padding: 12px 14px; border-radius: 12px;
-    font-size: 15px; outline: none; font-family: inherit; min-width: 120px; min-height: 48px;
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    border: none;
+    padding: 12px 16px;
+    border-radius: 14px;
+    font-size: 15px;
+    outline: none;
+    font-family: inherit;
+    min-width: 120px;
+    min-height: 50px;
+    box-shadow: var(--neu-pressed);
   }
-  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
   .stat-card {
-    background: var(--bg-tertiary); border: 1px solid var(--border);
-    border-radius: 12px; padding: 12px 8px; text-align: center;
+    background: var(--bg-elevated);
+    border-radius: 16px;
+    padding: 14px 8px;
+    text-align: center;
+    box-shadow: var(--neu-flat);
   }
   .stat-value {
-    font-size: 24px; font-weight: 800;
-    background: linear-gradient(135deg, var(--accent), #a855f7);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--accent);
     margin-bottom: 4px;
   }
-  .stat-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600; }
+  .stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600; }
   
   .note-item {
-    background: var(--bg-tertiary); border: 1px solid var(--border);
-    border-radius: 12px; padding: 12px 14px; margin-bottom: 8px;
-    font-size: 13px; color: var(--text-secondary); position: relative;
+    background: var(--bg-elevated);
+    border-radius: 14px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: var(--text-primary);
+    position: relative;
+    box-shadow: var(--neu-small);
   }
   .note-item .note-delete {
-    position: absolute; top: 8px; right: 8px;
-    background: none; border: none; color: var(--text-faint);
-    cursor: pointer; font-size: 20px; min-width: 32px; min-height: 32px;
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: var(--bg-elevated);
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 18px;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    box-shadow: var(--neu-small);
   }
   
   .deadline-widget {
-    background: linear-gradient(135deg, var(--bg-tertiary), var(--bg-secondary));
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 14px;
+    background: var(--bg-elevated);
+    border-radius: 16px;
+    padding: 16px;
     margin-bottom: 14px;
+    box-shadow: var(--neu-flat);
   }
-  
   .deadline-widget.urgent {
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.05));
-    border-color: rgba(239, 68, 68, 0.3);
-    animation: pulse 2s infinite;
+    box-shadow: var(--neu-flat), 0 0 0 2px var(--danger);
   }
-  
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.85; }
-  }
-  
   .deadline-title {
     font-size: 11px;
-    color: var(--text-dim);
+    color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.5px;
     font-weight: 700;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
   }
-  
   .deadline-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 6px 0;
+    padding: 8px 0;
     gap: 10px;
   }
-  
   .deadline-name {
     font-size: 13px;
     color: var(--text-primary);
@@ -625,65 +1080,61 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  
   .deadline-countdown {
     font-size: 12px;
     font-weight: 700;
     flex-shrink: 0;
+    padding: 3px 8px;
+    border-radius: 8px;
   }
-  
-  .deadline-countdown.urgent { color: #ef4444; }
-  .deadline-countdown.warning { color: #f59e0b; }
-  .deadline-countdown.normal { color: var(--accent); }
+  .deadline-countdown.urgent { color: var(--danger); background: rgba(248, 113, 113, 0.15); }
+  .deadline-countdown.warning { color: var(--warning); background: rgba(251, 191, 36, 0.15); }
+  .deadline-countdown.normal { color: var(--accent); background: var(--accent-soft); }
   
   .pomodoro-timer {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 20px;
+    background: var(--bg-elevated);
+    border-radius: 16px;
+    padding: 24px;
     text-align: center;
     margin-bottom: 14px;
+    box-shadow: var(--neu-flat);
   }
-  
   .pomodoro-time {
-    font-size: 44px;
+    font-size: 48px;
     font-weight: 800;
     color: var(--accent);
     margin: 14px 0;
     font-variant-numeric: tabular-nums;
   }
-  
   .pomodoro-controls { display: flex; gap: 10px; justify-content: center; }
   
   .voice-btn {
-    background: linear-gradient(135deg, var(--accent), #a855f7);
+    background: var(--accent);
     border: none;
     color: #fff;
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
     font-size: 22px;
     cursor: pointer;
     flex-shrink: 0;
+    box-shadow: var(--neu-small);
   }
-  
-  .voice-btn.recording {
-    background: linear-gradient(135deg, #ef4444, #dc2626);
-    animation: pulse 1s infinite;
-  }
+  .voice-btn.recording { background: var(--danger); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
   
   @media print {
     body { background: #fff; color: #000; padding: 0; }
-    .tabbar, .top-bar, .action-btn, .task-actions, .icon-btn { display: none !important; }
+    .tabbar, .header, .action-btn, .task-actions, .icon-btn { display: none !important; }
     body { padding-bottom: 0; }
   }
 </style>
 </head>
 <body>
 <div class="container">
-  <div class="top-bar">
-    <h1>Планировщик</h1>
-    <div class="top-actions">
+  <div class="header">
+    <div class="logo">План</div>
+    <div class="header-actions">
       <span class="week-badge" id="weekBadge">—</span>
       <button class="icon-btn" id="toggleTheme" title="Тема">🌓</button>
       <button class="icon-btn" id="openSettings" title="Настройки">⚙️</button>
@@ -692,9 +1143,9 @@
 
   <div class="view active" id="view-calendar">
     <div class="calendar-header">
-      <button id="prevMonth">‹</button>
+      <button class="calendar-nav" id="prevMonth">‹</button>
       <h2 id="monthYear"></h2>
-      <button id="nextMonth">›</button>
+      <button class="calendar-nav" id="nextMonth">›</button>
     </div>
     
     <div class="view-switcher">
@@ -710,8 +1161,20 @@
     </div>
     
     <div class="week-view" id="weekView">
-      <div class="week-grid-wrapper">
-        <div class="week-grid" id="weekGrid"></div>
+      <div class="week-nav">
+        <button class="calendar-nav" id="prevWeek">‹</button>
+        <h2 id="weekTitle"></h2>
+        <button class="calendar-nav" id="nextWeek">›</button>
+      </div>
+      
+      <!-- Мобильный вертикальный список -->
+      <div class="week-list" id="weekList"></div>
+      
+      <!-- Десктоп сетка -->
+      <div class="week-grid-desktop">
+        <div class="week-grid-wrapper">
+          <div class="week-grid" id="weekGrid"></div>
+        </div>
       </div>
     </div>
 
@@ -747,24 +1210,23 @@
 </div>
 
 <div class="tabbar">
-  <button class="tabbar-btn active" data-tab="calendar">
-    <span class="tab-icon">📅</span>
-    <span>Календарь</span>
-  </button>
-  <button class="tabbar-btn" data-tab="all">
-    <span class="tab-icon">📋</span>
-    <span>Задачи</span>
-  </button>
-  <button class="tabbar-btn" data-tab="schedule">
-    <span class="tab-icon">🔁</span>
-    <span>Расписание</span>
-  </button>
-  <button class="tabbar-btn" id="tabbarImport">
-    <span class="tab-icon">📥</span>
-    <span>Импорт</span>
-  </button>
+  <div class="tabbar-inner">
+    <button class="tabbar-btn active" data-tab="calendar">
+      <span class="tab-icon">📅</span>
+      <span>Календарь</span>
+    </button>
+    <button class="tabbar-btn" data-tab="all">
+      <span class="tab-icon">📋</span>
+      <span>Задачи</span>
+    </button>
+    <button class="tabbar-btn" data-tab="schedule">
+      <span class="tab-icon">🔁</span>
+      <span>Расписание</span>
+    </button>
+  </div>
 </div>
 
+<!-- Модалки (без изменений в структуре, только стили) -->
 <div class="modal-overlay" id="taskModal">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -860,7 +1322,7 @@
     <div class="modal-handle"></div>
     <h3>🍅 Pomodoro</h3>
     <div class="pomodoro-timer">
-      <div style="color:var(--text-dim); font-size:13px; margin-bottom:8px;" id="pomodoroTask">Задача</div>
+      <div style="color:var(--text-muted); font-size:13px; margin-bottom:8px;" id="pomodoroTask">Задача</div>
       <div class="pomodoro-time" id="pomodoroTime">25:00</div>
       <div class="pomodoro-controls">
         <button class="btn btn-primary" id="pomodoroStart">Старт</button>
@@ -900,8 +1362,12 @@
       <label>Данные</label>
       <div class="form-row">
         <button class="btn btn-secondary" id="exportData">📤 Экспорт</button>
-        <button class="btn btn-secondary" id="importData">📥 Импорт</button>
+        <button class="btn btn-secondary" id="importData">📥 Импорт JSON</button>
       </div>
+    </div>
+    <div class="form-group">
+      <label>Импорт текста/фото</label>
+      <button class="btn btn-secondary" id="openImportFromSettings" style="width:100%">📥 Импорт задач</button>
     </div>
     <div class="form-group">
       <label>Печать</label>
@@ -953,7 +1419,9 @@
   <div class="toast-body" id="toastBody"></div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script>
+// ===== ДАННЫЕ =====
 const DEFAULT_CATEGORIES = [
   { id: 'study', name: 'Учёба', color: '#3b82f6', bg: '#1e3a5f' },
   { id: 'home', name: 'Дом', color: '#22c55e', bg: '#14532d' },
@@ -965,6 +1433,17 @@ const COLOR_PALETTE = ['#3b82f6','#22c55e','#f97316','#ec4899','#a855f7','#06b6d
 const WEEKDAYS_FULL = ['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];
 const WEEKDAYS_SHORT = ['вс','пн','вт','ср','чт','пт','сб'];
 const MONTHS_GEN = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+
+const TIME_SLOTS = [
+  { start: '07:30', end: '09:00' },
+  { start: '09:10', end: '10:40' },
+  { start: '10:50', end: '12:20' },
+  { start: '13:00', end: '14:30' },
+  { start: '14:40', end: '16:10' },
+  { start: '16:20', end: '17:50' },
+  { start: '18:00', end: '19:30' },
+  { start: '19:40', end: '21:10' }
+];
 
 const HOLIDAYS_2026 = [
   '2026-0-1','2026-0-2','2026-0-3','2026-0-4','2026-0-5','2026-0-6','2026-0-7','2026-0-8',
@@ -1101,18 +1580,16 @@ function addCategory() {
   renderCategoryList();
 }
 
+// ===== КАЛЕНДАРЬ =====
 let viewMonth = new Date().getMonth();
 let viewYear = new Date().getFullYear();
 let selectedDate = new Date();
+let weekOffset = 0; // для переключения недель
 
 function getCategoryColorsForDate(date) {
   const colors = new Set();
   const key = dateKey(date);
-  
-  // Всегда показываем точки для одноразовых задач (даже в праздники)
   (state.tasks[key] || []).forEach(t => colors.add(getCategoryById(t.category).color));
-  
-  // Повторяющиеся задачи не показываем в праздники/воскресенья
   if (!isFreeDay(date)) {
     const weekday = date.getDay();
     const weekType = getWeekType(date);
@@ -1122,7 +1599,6 @@ function getCategoryColorsForDate(date) {
       }
     });
   }
-  
   return [...colors];
 }
 
@@ -1187,8 +1663,6 @@ function renderCalendar() {
 function getTasksForDate(date, includeTemplates = true) {
   const key = dateKey(date);
   const regular = (state.tasks[key] || []).map(t => ({ ...t, _type: 'regular' }));
-  
-  // В праздники/воскресенья показываем только одноразовые задачи
   if (isFreeDay(date) || !includeTemplates) return regular;
   
   const weekday = date.getDay();
@@ -1249,7 +1723,7 @@ function renderTasks() {
   const dayNotes = state.notes[key] || [];
   if (dayNotes.length > 0) {
     const notesHeader = document.createElement('div');
-    notesHeader.style.cssText = 'font-size:12px; color:var(--text-dim); margin:14px 0 8px; text-transform:uppercase; letter-spacing:0.5px; font-weight:700;';
+    notesHeader.style.cssText = 'font-size:12px; color:var(--text-muted); margin:14px 0 8px; text-transform:uppercase; letter-spacing:0.5px; font-weight:700;';
     notesHeader.textContent = 'Заметки';
     notesEl.appendChild(notesHeader);
     dayNotes.forEach((note, idx) => {
@@ -1274,8 +1748,18 @@ function createTaskElement(task, date, isSchedule = false) {
   const li = document.createElement('li');
   li.className = 'task-item' + (task.done ? ' done' : '');
   
+  // Свайп-фоны
+  const swipeBgDelete = document.createElement('div');
+  swipeBgDelete.className = 'swipe-bg delete';
+  swipeBgDelete.textContent = '🗑 Удалить';
+  const swipeBgComplete = document.createElement('div');
+  swipeBgComplete.className = 'swipe-bg complete';
+  swipeBgComplete.textContent = '✓ Выполнено';
+  
   if (isSchedule) {
     setupTouchDrag(li, task);
+  } else {
+    setupSwipe(li, task, date);
   }
 
   const check = document.createElement('input');
@@ -1358,8 +1842,57 @@ function createTaskElement(task, date, isSchedule = false) {
   actions.appendChild(del);
 
   li.onclick = () => { vibrate(10); openTaskModal(date, task, isSchedule); };
-  li.appendChild(check); li.appendChild(content); li.appendChild(actions);
+  li.appendChild(swipeBgDelete);
+  li.appendChild(swipeBgComplete);
+  li.appendChild(check); 
+  li.appendChild(content); 
+  li.appendChild(actions);
   return li;
+}
+
+// ===== СВАЙПЫ ДЛЯ ЗАДАЧ =====
+function setupSwipe(li, task, date) {
+  let startX = 0, currentX = 0, isSwiping = false;
+  const deleteBg = li.querySelector('.swipe-bg.delete');
+  const completeBg = li.querySelector('.swipe-bg.complete');
+  
+  li.addEventListener('touchstart', e => {
+    if (e.target.closest('.task-check, .task-action-btn, .pomodoro-btn')) return;
+    startX = e.touches[0].clientX;
+    isSwiping = true;
+  }, { passive: true });
+  
+  li.addEventListener('touchmove', e => {
+    if (!isSwiping) return;
+    currentX = e.touches[0].clientX;
+    const diff = currentX - startX;
+    if (Math.abs(diff) > 10) {
+      li.style.transform = `translateX(${diff}px)`;
+      li.style.transition = 'none';
+      if (diff < -30) deleteBg.style.opacity = '1';
+      else deleteBg.style.opacity = '0';
+      if (diff > 30) completeBg.style.opacity = '1';
+      else completeBg.style.opacity = '0';
+    }
+  }, { passive: true });
+  
+  li.addEventListener('touchend', () => {
+    if (!isSwiping) return;
+    const diff = currentX - startX;
+    li.style.transition = 'transform 0.2s';
+    li.style.transform = '';
+    deleteBg.style.opacity = '0';
+    completeBg.style.opacity = '0';
+    
+    if (diff < -100) {
+      vibrate(30);
+      deleteTask(task, date);
+    } else if (diff > 100) {
+      vibrate(20);
+      toggleTaskDone(task, date, !task.done);
+    }
+    isSwiping = false;
+  });
 }
 
 function setupTouchDrag(li, task) {
@@ -1367,7 +1900,6 @@ function setupTouchDrag(li, task) {
   let currentDropTarget = null;
   
   li.setAttribute('draggable', 'true');
-  
   li.ondragstart = (e) => {
     e.dataTransfer.setData('text/plain', task.id);
     li.classList.add('dragging');
@@ -1389,20 +1921,14 @@ function setupTouchDrag(li, task) {
     if (!isDragging) {
       const dx = Math.abs(e.touches[0].clientX - startX);
       const dy = Math.abs(e.touches[0].clientY - startY);
-      if (dx > 10 || dy > 10) {
-        clearTimeout(longPressTimer);
-      }
+      if (dx > 10 || dy > 10) clearTimeout(longPressTimer);
       return;
     }
-    
     e.preventDefault();
     const touch = e.touches[0];
     const elem = document.elementFromPoint(touch.clientX, touch.clientY);
     const weekdayGroup = elem?.closest('.weekday-group');
-    
-    if (currentDropTarget && currentDropTarget !== weekdayGroup) {
-      currentDropTarget.classList.remove('drag-over');
-    }
+    if (currentDropTarget && currentDropTarget !== weekdayGroup) currentDropTarget.classList.remove('drag-over');
     if (weekdayGroup && weekdayGroup !== currentDropTarget) {
       weekdayGroup.classList.add('drag-over');
       vibrate(10);
@@ -1414,9 +1940,7 @@ function setupTouchDrag(li, task) {
     clearTimeout(longPressTimer);
     if (isDragging && currentDropTarget) {
       const newWd = parseInt(currentDropTarget.dataset.weekday);
-      if (!isNaN(newWd) && newWd !== task.weekday) {
-        moveTaskToWeekday(task.id, newWd);
-      }
+      if (!isNaN(newWd) && newWd !== task.weekday) moveTaskToWeekday(task.id, newWd);
       currentDropTarget.classList.remove('drag-over');
     }
     isDragging = false;
@@ -1568,6 +2092,7 @@ document.getElementById('saveTaskBtn').onclick = () => {
   saveState();
   closeModal('taskModal');
   renderCalendar(); renderTasks(); renderAllTasks(); renderSchedule();
+  if (state.settings.calendarView === 'week') renderWeekView();
 };
 
 document.getElementById('openAddTask').onclick = () => openTaskModal(selectedDate);
@@ -1593,6 +2118,7 @@ document.getElementById('saveNoteBtn').onclick = () => {
   vibrate(20);
 };
 
+// ===== POMODORO =====
 let pomodoroInterval = null;
 let pomodoroSeconds = 25 * 60;
 let pomodoroRunning = false;
@@ -1644,13 +2170,13 @@ document.getElementById('pomodoroReset').onclick = () => {
   document.getElementById('pomodoroStart').textContent = 'Старт';
 };
 
+// ===== ГОЛОСОВОЙ ВВОД =====
 let recognition = null;
 let isRecording = false;
 
 document.getElementById('voiceBtn').onclick = () => {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) { showToast('Ошибка', 'Голос не поддерживается'); return; }
-  
   if (isRecording) { recognition.stop(); return; }
   
   recognition = new SR();
@@ -1664,28 +2190,25 @@ document.getElementById('voiceBtn').onclick = () => {
     document.getElementById('voiceBtn').textContent = '⏹️';
     vibrate(20);
   };
-  
   recognition.onresult = (event) => {
     document.getElementById('fTitle').value = event.results[0][0].transcript;
     vibrate(15);
   };
-  
   recognition.onend = () => {
     isRecording = false;
     document.getElementById('voiceBtn').classList.remove('recording');
     document.getElementById('voiceBtn').textContent = '🎙️';
   };
-  
   recognition.onerror = () => {
     showToast('Ошибка', 'Не удалось распознать');
     isRecording = false;
     document.getElementById('voiceBtn').classList.remove('recording');
     document.getElementById('voiceBtn').textContent = '🎙️';
   };
-  
   recognition.start();
 };
 
+// ===== ЭКСПОРТ/ИМПОРТ =====
 document.getElementById('exportData').onclick = () => {
   const data = JSON.stringify(state, null, 2);
   const blob = new Blob([data], { type: 'application/json' });
@@ -1714,6 +2237,7 @@ document.getElementById('importData').onclick = () => {
         state.settings = { ...state.settings, ...(imported.settings || {}) };
         saveState();
         renderCalendar(); renderTasks(); renderAllTasks(); renderSchedule();
+        if (state.settings.calendarView === 'week') renderWeekView();
         vibrate(20);
         showToast('Готово', 'База импортирована');
         closeModal('settingsModal');
@@ -1728,30 +2252,24 @@ document.getElementById('importData').onclick = () => {
 
 document.getElementById('exportIcs').onclick = () => {
   let ics = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Planner//RU\r\nCALSCALE:GREGORIAN\r\n';
-  
   const semesterStart = new Date(state.settings.semesterStart);
   const semesterEnd = new Date(semesterStart);
   semesterEnd.setMonth(semesterEnd.getMonth() + 5);
   
   state.templates.forEach(t => {
     if (t.repeatType !== 'weekly' && t.repeatType !== 'biweekly' && t.repeatType) return;
-    
     const startDate = new Date(semesterStart);
     const dayDiff = (t.weekday - semesterStart.getDay() + 7) % 7;
     startDate.setDate(startDate.getDate() + dayDiff);
-    
     const endTime = t.time ? addMinutes(t.time, 90) : '10:30';
-    
     let rrule = '';
     if (t.repeatType === 'biweekly') {
       rrule = `RRULE:FREQ=WEEKLY;INTERVAL=2;UNTIL=${formatIcsDateOnly(semesterEnd)}\r\n`;
     } else {
       rrule = `RRULE:FREQ=WEEKLY;UNTIL=${formatIcsDateOnly(semesterEnd)}\r\n`;
     }
-    
     const dtStart = formatIcsDateTime(startDate, t.time || '09:00');
     const dtEnd = formatIcsDateTime(startDate, endTime);
-    
     ics += 'BEGIN:VEVENT\r\n';
     ics += `UID:${t.id}@planner\r\n`;
     ics += `DTSTART:${dtStart}\r\n`;
@@ -1761,7 +2279,6 @@ document.getElementById('exportIcs').onclick = () => {
     ics += rrule;
     ics += 'END:VEVENT\r\n';
   });
-  
   ics += 'END:VCALENDAR';
   
   const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
@@ -1782,18 +2299,15 @@ function formatIcsDateTime(date, time) {
   const d = String(date.getDate()).padStart(2, '0');
   return `${y}${mo}${d}T${String(h).padStart(2,'0')}${String(m).padStart(2,'0')}00`;
 }
-
 function formatIcsDateOnly(date) {
   const y = date.getFullYear();
   const mo = String(date.getMonth() + 1).padStart(2, '0');
   const d = String(date.getDate()).padStart(2, '0');
   return `${y}${mo}${d}T235959Z`;
 }
-
 function escapeIcs(s) {
   return s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
 }
-
 function addMinutes(time, mins) {
   const [h, m] = time.split(':').map(Number);
   const total = h * 60 + m + mins;
@@ -1808,10 +2322,10 @@ document.getElementById('toggleTheme').onclick = () => {
   vibrate(15);
 };
 
+// ===== СТАТИСТИКА =====
 function renderStats() {
   const grid = document.getElementById('statsGrid');
   const today = new Date(); today.setHours(0,0,0,0);
-  
   let done = 0, weekDone = 0, monthDone = 0;
   const weekAgo = new Date(today); weekAgo.setDate(weekAgo.getDate() - 7);
   const monthAgo = new Date(today); monthAgo.setDate(monthAgo.getDate() - 30);
@@ -1827,7 +2341,6 @@ function renderStats() {
       }
     });
   }
-  
   grid.innerHTML = `
     <div class="stat-card"><div class="stat-value">${done}</div><div class="stat-label">Всего</div></div>
     <div class="stat-card"><div class="stat-value">${weekDone}</div><div class="stat-label">Неделя</div></div>
@@ -1835,10 +2348,10 @@ function renderStats() {
   `;
 }
 
+// ===== ДЕДЛАЙНЫ =====
 function renderDeadlineWidget() {
   const widget = document.getElementById('deadlineWidget');
   const today = new Date(); today.setHours(0,0,0,0);
-  
   const deadlines = [];
   for (const key in state.tasks) {
     const [y, m, d] = key.split('-').map(Number);
@@ -1850,10 +2363,8 @@ function renderDeadlineWidget() {
       }
     });
   }
-  
   deadlines.sort((a, b) => a.days - b.days);
   const top3 = deadlines.slice(0, 3);
-  
   if (top3.length === 0) { widget.innerHTML = ''; return; }
   
   const isUrgent = top3.some(d => d.days <= 3);
@@ -1863,7 +2374,6 @@ function renderDeadlineWidget() {
     let countdownClass = 'normal';
     if (d.days <= 3) countdownClass = 'urgent';
     else if (d.days <= 7) countdownClass = 'warning';
-    
     html += `<div class="deadline-item">
       <span class="deadline-name">${d.title}</span>
       <span class="deadline-countdown ${countdownClass}">${d.days} ${pluralize(d.days,'д','д','д')}</span>
@@ -1878,7 +2388,6 @@ function renderAllTasks() {
   const container = document.getElementById('allTasksList');
   container.innerHTML = '';
   const today = new Date(); today.setHours(0,0,0,0);
-  
   const search = document.getElementById('searchInput').value.toLowerCase();
   const filterCat = document.getElementById('filterCategory').value;
 
@@ -1906,7 +2415,6 @@ function renderAllTasks() {
     else if (diff === 1) label = 'Завтра';
     else if (diff === -1) label = 'Вчера';
     else label = `${date.getDate()} ${MONTHS_GEN[date.getMonth()]}`;
-    
     header.innerHTML = `<span>${date < today ? '⚠️ ' : ''}${label}</span><span class="count">${dayTasks.length} ${pluralize(dayTasks.length,'задача','задачи','задач')}</span>`;
     group.appendChild(header);
 
@@ -1923,10 +2431,10 @@ function renderAllTasks() {
 document.getElementById('searchInput').oninput = renderAllTasks;
 document.getElementById('filterCategory').onchange = renderAllTasks;
 
+// ===== РАСПИСАНИЕ =====
 function renderSchedule() {
   const container = document.getElementById('scheduleList');
   container.innerHTML = '';
-  
   if (state.templates.length === 0) {
     container.innerHTML = '<div class="empty">Расписание пустое</div>';
     return;
@@ -1944,7 +2452,6 @@ function renderSchedule() {
     const group = document.createElement('div');
     group.className = 'weekday-group';
     group.dataset.weekday = wd;
-    
     if (wd >= 0) {
       group.ondragover = e => { e.preventDefault(); group.classList.add('drag-over'); };
       group.ondragleave = () => group.classList.remove('drag-over');
@@ -1955,7 +2462,6 @@ function renderSchedule() {
         moveTaskToWeekday(taskId, wd);
       };
     }
-    
     const header = document.createElement('div');
     header.className = 'weekday-header';
     header.innerHTML = `<span>${title}</span><span class="count">${tasks.length}</span>`;
@@ -1986,11 +2492,13 @@ function moveTaskToWeekday(taskId, newWeekday) {
   if (task) {
     task.weekday = newWeekday;
     saveState(); renderSchedule(); renderCalendar();
+    if (state.settings.calendarView === 'week') renderWeekView();
     vibrate(25);
     showToast('Готово', `→ ${WEEKDAYS_FULL[newWeekday]}`);
   }
 }
 
+// ===== НАСТРОЙКИ =====
 document.getElementById('openSettings').onclick = () => {
   document.getElementById('semesterStart').value = state.settings.semesterStart;
   document.getElementById('upperIsEven').checked = state.settings.upperIsEven;
@@ -2011,12 +2519,65 @@ function saveSettings() {
   state.settings.upperIsEven = document.getElementById('upperIsEven').checked;
   saveState(); closeModal('settingsModal');
   updateWeekBadge(); renderCalendar(); renderTasks(); renderAllTasks();
+  if (state.settings.calendarView === 'week') renderWeekView();
   vibrate(20);
 }
+
+document.getElementById('openImportFromSettings').onclick = () => {
+  closeModal('settingsModal');
+  setTimeout(() => {
+    document.getElementById('importText').value = '';
+    document.getElementById('parsedFromText').innerHTML = '';
+    document.getElementById('recognizedBlock').style.display = 'none';
+    document.getElementById('parsedFromPhoto').innerHTML = '';
+    document.getElementById('ocrProgress').style.display = 'none';
+    document.getElementById('importModal').classList.add('show');
+  }, 200);
+};
 
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 document.querySelectorAll('.modal-overlay').forEach(m => {
   m.onclick = e => { if (e.target === m) { m.classList.remove('show'); vibrate(10); } };
+});
+
+// ===== СВАЙП ВНИЗ ДЛЯ ЗАКРЫТИЯ МОДАЛОК =====
+document.querySelectorAll('.modal').forEach(modal => {
+  let startY = 0, currentY = 0, isDragging = false;
+  const handle = modal.querySelector('.modal-handle');
+  
+  const onStart = (e) => {
+    startY = e.touches ? e.touches[0].clientY : e.clientY;
+    isDragging = true;
+    modal.style.transition = 'none';
+  };
+  const onMove = (e) => {
+    if (!isDragging) return;
+    currentY = e.touches ? e.touches[0].clientY : e.clientY;
+    const diff = currentY - startY;
+    if (diff > 0) {
+      modal.style.transform = `translateY(${diff}px)`;
+    }
+  };
+  const onEnd = () => {
+    if (!isDragging) return;
+    isDragging = false;
+    modal.style.transition = 'transform 0.2s';
+    const diff = currentY - startY;
+    if (diff > 100) {
+      modal.closest('.modal-overlay').classList.remove('show');
+      vibrate(10);
+    }
+    modal.style.transform = '';
+  };
+  
+  if (handle) {
+    handle.addEventListener('touchstart', onStart, { passive: true });
+    handle.addEventListener('touchmove', onMove, { passive: true });
+    handle.addEventListener('touchend', onEnd);
+    handle.addEventListener('mousedown', onStart);
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onEnd);
+  }
 });
 
 function pluralize(n, one, two, five) {
@@ -2037,17 +2598,15 @@ function showToast(title, body) {
   showToast._t = setTimeout(() => toast.classList.remove('show'), 3000);
 }
 
-// Переключатель месяц/неделя
+// ===== ПЕРЕКЛЮЧАТЕЛЬ МЕСЯЦ/НЕДЕЛЯ =====
 document.querySelectorAll('.view-switcher-btn').forEach(btn => {
   btn.onclick = () => {
     vibrate(10);
     document.querySelectorAll('.view-switcher-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    
     const view = btn.dataset.view;
     state.settings.calendarView = view;
     saveState();
-    
     if (view === 'month') {
       document.getElementById('monthView').style.display = 'block';
       document.getElementById('weekView').classList.remove('active');
@@ -2059,46 +2618,134 @@ document.querySelectorAll('.view-switcher-btn').forEach(btn => {
   };
 });
 
+// ===== ВИД НЕДЕЛЯ =====
+function getWeekStart(offset = 0) {
+  const today = new Date();
+  const dayOfWeek = today.getDay();
+  const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const start = new Date(today);
+  start.setDate(today.getDate() + diff + offset * 7);
+  start.setHours(0,0,0,0);
+  return start;
+}
+
 function renderWeekView() {
+  const weekStart = getWeekStart(weekOffset);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+  
+  const title = document.getElementById('weekTitle');
+  title.textContent = `${weekStart.getDate()} ${MONTHS_GEN[weekStart.getMonth()].slice(0,3)} — ${weekEnd.getDate()} ${MONTHS_GEN[weekEnd.getMonth()].slice(0,3)}`;
+  
+  renderWeekList(weekStart);
+  renderWeekGrid(weekStart);
+}
+
+// Мобильный вертикальный список
+function renderWeekList(weekStart) {
+  const list = document.getElementById('weekList');
+  list.innerHTML = '';
+  const today = new Date();
+  
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(weekStart);
+    date.setDate(weekStart.getDate() + i);
+    
+    const card = document.createElement('div');
+    card.className = 'week-day-card';
+    if (date.toDateString() === today.toDateString()) card.classList.add('today');
+    if (isFreeDay(date)) card.classList.add('holiday');
+    
+    const header = document.createElement('div');
+    header.className = 'week-day-header';
+    header.innerHTML = `
+      <span class="week-day-title">${WEEKDAYS_FULL[date.getDay()]}</span>
+      <span class="week-day-date">${date.getDate()} ${MONTHS_GEN[date.getMonth()].slice(0,3)}</span>
+    `;
+    card.appendChild(header);
+    
+    const tasks = getTasksForDate(date);
+    if (tasks.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'week-empty';
+      empty.textContent = isFreeDay(date) ? 'Выходной' : 'Нет пар';
+      card.appendChild(empty);
+    } else {
+      tasks.forEach(task => {
+        const pair = document.createElement('div');
+        pair.className = 'week-pair';
+        
+        const time = document.createElement('div');
+        time.className = 'week-pair-time';
+        const endTime = task.time ? addMinutes(task.time, 90) : '';
+        time.innerHTML = `
+          <div class="t-start">${task.time || '—'}</div>
+          ${endTime ? `<div class="t-end">${endTime}</div>` : ''}
+        `;
+        
+        const info = document.createElement('div');
+        info.className = 'week-pair-info';
+        
+        let typeHtml = '';
+        if (task._type === 'template') {
+          if (task.weekType === 'upper') typeHtml = '<span class="week-pair-type upper">верх</span>';
+          else if (task.weekType === 'lower') typeHtml = '<span class="week-pair-type lower">низ</span>';
+        }
+        
+        info.innerHTML = `
+          <div class="week-pair-title">${typeHtml}${task.title}</div>
+          ${task.description ? `<div class="week-pair-meta">${task.description}</div>` : ''}
+        `;
+        
+        pair.appendChild(time);
+        pair.appendChild(info);
+        
+        pair.onclick = () => {
+          vibrate(10);
+          selectedDate = new Date(date);
+          viewMonth = date.getMonth();
+          viewYear = date.getFullYear();
+          openTaskModal(date, task);
+        };
+        
+        card.appendChild(pair);
+      });
+    }
+    
+    card.onclick = (e) => {
+      if (e.target.closest('.week-pair')) return;
+      selectedDate = new Date(date);
+      viewMonth = date.getMonth();
+      viewYear = date.getFullYear();
+      renderCalendar();
+      renderTasks();
+    };
+    
+    list.appendChild(card);
+  }
+}
+
+// Десктоп сетка
+function renderWeekGrid(weekStart) {
   const grid = document.getElementById('weekGrid');
   grid.innerHTML = '';
-  
   const today = new Date();
-  const startOfWeek = new Date(today);
-  startOfWeek.setDate(today.getDate() - today.getDay() + 1);
   
-  const timeSlots = [
-    { start: '07:30', end: '09:00' },
-    { start: '09:10', end: '10:40' },
-    { start: '10:50', end: '12:20' },
-    { start: '13:00', end: '14:30' },
-    { start: '14:40', end: '16:10' },
-    { start: '16:20', end: '17:50' },
-    { start: '18:00', end: '19:30' },
-    { start: '19:40', end: '21:10' }
-  ];
-  
-  // Угол
   const corner = document.createElement('div');
   corner.className = 'week-corner';
   corner.textContent = 'Время';
   grid.appendChild(corner);
   
-  // Заголовки дней
   for (let i = 0; i < 7; i++) {
-    const date = new Date(startOfWeek);
-    date.setDate(startOfWeek.getDate() + i);
-    
+    const date = new Date(weekStart);
+    date.setDate(weekStart.getDate() + i);
     const header = document.createElement('div');
-    header.className = 'week-day-header';
+    header.className = 'week-day-header-desktop';
     if (date.toDateString() === today.toDateString()) header.classList.add('today');
-    if (isFreeDay(date)) header.classList.add('holiday');
-    
     header.innerHTML = `
-      <div class="week-day-name">${WEEKDAYS_SHORT[date.getDay()]}</div>
-      <div class="week-day-num">${date.getDate()}</div>
+      <div class="dn">${WEEKDAYS_SHORT[date.getDay()]}</div>
+      <div class="dd">${date.getDate()}</div>
     `;
-    
     header.onclick = () => {
       selectedDate = new Date(date);
       viewMonth = date.getMonth();
@@ -2107,29 +2754,20 @@ function renderWeekView() {
       renderTasks();
       document.querySelectorAll('.view-switcher-btn')[0].click();
     };
-    
     grid.appendChild(header);
   }
   
-  // Ячейки
-  timeSlots.forEach(slot => {
-    // Время
+  TIME_SLOTS.forEach(slot => {
     const timeCol = document.createElement('div');
-    timeCol.className = 'week-time-col';
-    timeCol.innerHTML = `
-      <div class="time-start">${slot.start}</div>
-      <div class="time-end">${slot.end}</div>
-    `;
+    timeCol.className = 'week-time-col-desktop';
+    timeCol.innerHTML = `<div class="ts">${slot.start}</div><div class="te">${slot.end}</div>`;
     grid.appendChild(timeCol);
     
-    // Дни
     for (let i = 0; i < 7; i++) {
-      const date = new Date(startOfWeek);
-      date.setDate(startOfWeek.getDate() + i);
-      
+      const date = new Date(weekStart);
+      date.setDate(weekStart.getDate() + i);
       const cell = document.createElement('div');
-      cell.className = 'week-cell';
-      if (isFreeDay(date)) cell.classList.add('holiday-cell');
+      cell.className = 'week-cell-desktop';
       
       const tasks = getTasksForDate(date).filter(t => {
         if (!t.time) return false;
@@ -2137,28 +2775,26 @@ function renderWeekView() {
         const taskMinutes = h * 60 + m;
         const [sh, sm] = slot.start.split(':').map(Number);
         const [eh, em] = slot.end.split(':').map(Number);
-        const slotStart = sh * 60 + sm;
-        const slotEnd = eh * 60 + em;
-        return taskMinutes >= slotStart && taskMinutes < slotEnd;
+        return taskMinutes >= sh * 60 + sm && taskMinutes < eh * 60 + em;
       });
       
       tasks.slice(0, 2).forEach(task => {
         const cat = getCategoryById(task.category);
-        const taskEl = document.createElement('div');
-        taskEl.className = 'week-task' + (task.done ? ' done' : '');
-        taskEl.style.background = cat.color;
-        taskEl.innerHTML = `<span class="task-t">${task.time}</span>${task.title}`;
-        taskEl.onclick = (e) => {
+        const chip = document.createElement('div');
+        chip.className = 'week-task-chip';
+        chip.style.background = cat.color;
+        chip.innerHTML = `<span class="ct">${task.time}</span>${task.title}`;
+        chip.onclick = (e) => {
           e.stopPropagation();
           vibrate(10);
           openTaskModal(date, task);
         };
-        cell.appendChild(taskEl);
+        cell.appendChild(chip);
       });
       
       if (tasks.length > 2) {
         const more = document.createElement('div');
-        more.className = 'week-more';
+        more.style.cssText = 'font-size:10px; color:var(--text-muted); text-align:center; padding:2px;';
         more.textContent = `+${tasks.length - 2}`;
         cell.appendChild(more);
       }
@@ -2177,6 +2813,37 @@ function renderWeekView() {
   });
 }
 
+// Навигация по неделям
+document.getElementById('prevWeek').onclick = () => {
+  weekOffset--;
+  vibrate(10);
+  renderWeekView();
+};
+document.getElementById('nextWeek').onclick = () => {
+  weekOffset++;
+  vibrate(10);
+  renderWeekView();
+};
+
+// Свайп для переключения недель (на мобильном)
+let weekSwipeStartX = 0;
+const weekView = document.getElementById('weekView');
+weekView.addEventListener('touchstart', (e) => {
+  if (e.target.closest('.week-pair, .week-task-chip')) return;
+  weekSwipeStartX = e.touches[0].clientX;
+}, { passive: true });
+weekView.addEventListener('touchend', (e) => {
+  if (e.target.closest('.week-pair, .week-task-chip')) return;
+  const endX = e.changedTouches[0].clientX;
+  const diff = endX - weekSwipeStartX;
+  if (Math.abs(diff) > 80) {
+    if (diff > 0) { weekOffset--; vibrate(15); }
+    else { weekOffset++; vibrate(15); }
+    renderWeekView();
+  }
+});
+
+// ===== ТАБ-БАР =====
 document.querySelectorAll('.tabbar-btn[data-tab]').forEach(btn => {
   btn.onclick = () => {
     vibrate(10);
@@ -2200,16 +2867,6 @@ document.querySelectorAll('.tabbar-btn[data-tab]').forEach(btn => {
   };
 });
 
-document.getElementById('tabbarImport').onclick = () => {
-  vibrate(10);
-  document.getElementById('importText').value = '';
-  document.getElementById('parsedFromText').innerHTML = '';
-  document.getElementById('recognizedBlock').style.display = 'none';
-  document.getElementById('parsedFromPhoto').innerHTML = '';
-  document.getElementById('ocrProgress').style.display = 'none';
-  document.getElementById('importModal').classList.add('show');
-};
-
 document.getElementById('prevMonth').onclick = () => {
   viewMonth--;
   if (viewMonth < 0) { viewMonth = 11; viewYear--; }
@@ -2221,6 +2878,7 @@ document.getElementById('nextMonth').onclick = () => {
   renderCalendar();
 };
 
+// ===== ПАРСЕР =====
 const WEEKDAY_MAP = {
   'понедельник':1,'пн':1,'вторник':2,'вт':2,'среда':3,'ср':3,
   'четверг':4,'чт':4,'пятница':5,'пт':5,'суббота':6,'сб':6,'воскресенье':0,'вс':0
@@ -2356,6 +3014,7 @@ function renderParsedTasks(parsed, containerId) {
     });
     saveState();
     renderCalendar(); renderTasks(); renderAllTasks(); renderSchedule();
+    if (state.settings.calendarView === 'week') renderWeekView();
     closeModal('importModal');
     vibrate(25);
     showToast('Готово!', `Добавлено: ${added}`);
@@ -2383,7 +3042,7 @@ fileInput.onchange = e => { if (e.target.files[0]) handleFile(e.target.files[0])
 async function handleFile(file) {
   if (!file.type.startsWith('image/')) { showToast('Ошибка', 'Не изображение'); return; }
   if (typeof Tesseract === 'undefined') {
-    showToast('Ошибка', 'OCR недоступен. Нужен интернет для первой загрузки.');
+    showToast('Ошибка', 'OCR недоступен. Нужен интернет.');
     return;
   }
   const progress = document.getElementById('ocrProgress');
@@ -2442,7 +3101,6 @@ if ('serviceWorker' in navigator) {
 loadState();
 updateWeekBadge();
 
-// Восстанавливаем вид календаря
 if (state.settings.calendarView === 'week') {
   document.querySelectorAll('.view-switcher-btn')[0].classList.remove('active');
   document.querySelectorAll('.view-switcher-btn')[1].classList.add('active');
