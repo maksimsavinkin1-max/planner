@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#1e1e2e">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%231e1e2e' width='100' height='100' rx='20'/><text x='50' y='68' font-size='55' text-anchor='middle' fill='%237c8cf5'>📅</text></svg>">
-<title>Планировщик Pro</title>
+<title>PlanPro</title>
 <style>
   :root {
     --bg: #1e1e2e;
@@ -69,6 +69,7 @@
   }
   .icon-btn:active { transform: scale(0.92); background: var(--surface-soft); }
   
+  /* Views wrapper с анимацией свайпа */
   .views-wrapper {
     flex: 1;
     position: relative;
@@ -82,9 +83,23 @@
     -webkit-overflow-scrolling: touch;
     padding: 0 16px 20px;
     display: none;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s;
   }
-  .view.active { display: block; animation: fadeIn 0.25s; }
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .view.active { display: block; animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(30px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  .view.slide-left { animation: slideLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+  .view.slide-right { animation: slideRight 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes slideLeft {
+    from { opacity: 0; transform: translateX(-30px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes slideRight {
+    from { opacity: 0; transform: translateX(30px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
   
   /* Переключатель месяц/неделя */
   .view-switcher {
@@ -93,11 +108,12 @@
     border: 1px solid var(--border);
   }
   .vs-btn {
-    flex: 1; padding: 8px; border: none; background: transparent;
+    flex: 1; padding: 10px; border: none; background: transparent;
     border-radius: 9px; font-size: 13px; font-weight: 600;
-    color: var(--text-dim); cursor: pointer;
+    color: var(--text-dim); cursor: pointer; transition: all 0.2s;
   }
   .vs-btn.active { background: var(--accent); color: #fff; }
+  .vs-btn:active { transform: scale(0.95); }
   
   /* Календарь */
   .cal-header {
@@ -126,7 +142,7 @@
   .day-dots { position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); display: flex; gap: 2px; }
   .day-dot { width: 4px; height: 4px; border-radius: 50%; }
   
-  /* Timeline (вид Неделя) */
+  /* Timeline */
   .timeline-wrap {
     background: var(--surface); border-radius: 16px; overflow: hidden;
     border: 1px solid var(--border); margin-bottom: 16px;
@@ -134,6 +150,7 @@
   .tl-header {
     display: grid; grid-template-columns: 44px repeat(7, 1fr);
     border-bottom: 1px solid var(--border); background: var(--surface-soft);
+    position: sticky; top: 0; z-index: 2;
   }
   .tl-corner { padding: 8px 4px; font-size: 10px; color: var(--text-faint); text-align: center; }
   .tl-day-h {
@@ -147,7 +164,6 @@
   
   .tl-body {
     display: grid; grid-template-columns: 44px repeat(7, 1fr);
-    max-height: 500px; overflow-y: auto;
   }
   .tl-time {
     height: 70px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border);
@@ -163,14 +179,12 @@
   
   .tl-event {
     position: absolute; left: 2px; right: 2px; top: 2px;
-    background: var(--accent); color: #fff;
+    color: #fff;
     border-radius: 6px; padding: 4px 5px;
     font-size: 9px; font-weight: 600; line-height: 1.1;
     overflow: hidden; cursor: pointer; z-index: 2;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
   }
-  .tl-event.upper { background: #3b82f6; }
-  .tl-event.lower { background: #a855f7; }
   .tl-event .et { font-size: 8px; opacity: 0.85; display: block; }
   
   /* Tasks section */
@@ -211,7 +225,7 @@
   
   .empty { text-align: center; color: var(--text-faint); padding: 30px 0; font-size: 13px; }
   
-  /* All tasks view */
+  /* All tasks */
   .filter-chips {
     display: flex; gap: 6px; overflow-x: auto; padding: 4px 0; margin-bottom: 12px;
     -webkit-overflow-scrolling: touch;
@@ -221,7 +235,7 @@
     padding: 8px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
     background: var(--surface); border: 1px solid var(--border);
     color: var(--text-dim); cursor: pointer; white-space: nowrap;
-    flex-shrink: 0;
+    flex-shrink: 0; transition: all 0.15s;
   }
   .chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
   .chip:active { transform: scale(0.95); }
@@ -267,43 +281,69 @@
   .dw-countdown.warning { color: var(--warning); background: rgba(251, 191, 36, 0.15); }
   .dw-countdown.normal { color: var(--accent); background: var(--accent-glow); }
   
-  /* Tracker */
-  .tracker-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  /* Tracker - ПЕРЕДЕЛАН */
+  .tracker-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
   .tracker-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 14px; padding: 14px;
+    border-radius: 18px; padding: 18px;
+    position: relative; overflow: hidden;
+    min-height: 110px;
+    display: flex; flex-direction: column; justify-content: space-between;
   }
-  .tc-title { font-size: 11px; color: var(--text-dim); font-weight: 700; text-transform: uppercase; margin-bottom: 6px; }
-  .tc-value { font-size: 22px; font-weight: 800; color: var(--accent); }
-  .tc-sub { font-size: 10px; color: var(--text-faint); margin-top: 4px; }
+  .tracker-card.deadlines {
+    background: linear-gradient(135deg, #3b82f6, #1e40af);
+    color: #fff;
+  }
+  .tracker-card.budget {
+    background: linear-gradient(135deg, #22c55e, #15803d);
+    color: #fff;
+  }
+  .tracker-card .tc-icon {
+    font-size: 32px;
+    position: absolute;
+    top: 12px; right: 12px;
+    opacity: 0.3;
+  }
+  .tracker-card .tc-title {
+    font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.5px; opacity: 0.9; margin-bottom: 6px;
+  }
+  .tracker-card .tc-value {
+    font-size: 28px; font-weight: 800;
+  }
+  .tracker-card .tc-sub {
+    font-size: 11px; opacity: 0.8; margin-top: 4px;
+  }
   
   .card {
     background: var(--surface); border: 1px solid var(--border);
-    border-radius: 14px; padding: 14px; margin-bottom: 14px;
+    border-radius: 16px; padding: 16px; margin-bottom: 14px;
   }
-  .card-title { font-size: 11px; color: var(--text-dim); font-weight: 700; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.3px; }
+  .card-title {
+    font-size: 13px; color: var(--text); font-weight: 700;
+    margin-bottom: 12px; letter-spacing: 0.3px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card-title .ct-icon { font-size: 18px; }
   
   .habit-item {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 10px 0; border-bottom: 1px solid var(--border);
+    padding: 12px 0; border-bottom: 1px solid var(--border);
   }
   .habit-item:last-child { border-bottom: none; }
   .habit-name { font-weight: 600; font-size: 14px; }
   .habit-streak { font-size: 11px; color: var(--warning); font-weight: 700; margin-top: 2px; }
-  .habit-check { width: 24px; height: 24px; accent-color: var(--accent); }
+  .habit-check { width: 26px; height: 26px; accent-color: var(--accent); }
   
-  .budget-input {
-    display: flex; gap: 8px; margin-bottom: 10px;
-  }
+  .budget-input { display: flex; gap: 8px; margin-bottom: 10px; }
   .budget-input input { flex: 1; }
   
   .expense-item {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 8px 0; border-bottom: 1px solid var(--border);
+    padding: 10px 0; border-bottom: 1px solid var(--border);
     font-size: 13px;
   }
   .expense-item:last-child { border-bottom: none; }
-  .expense-del { background: none; border: none; color: var(--text-faint); font-size: 16px; cursor: pointer; padding: 2px 6px; }
+  .expense-del { background: none; border: none; color: var(--text-faint); font-size: 18px; cursor: pointer; padding: 2px 8px; }
   
   /* Notes */
   .note-card {
@@ -334,14 +374,14 @@
   }
   body.light-theme .tabbar { background: rgba(255, 255, 255, 0.9); }
   .tabbar-inner {
-    display: flex; gap: 6px; background: var(--surface);
-    padding: 6px; border-radius: 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    display: flex; gap: 4px; background: var(--surface);
+    padding: 5px; border-radius: 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
   }
   .tab-btn {
     background: transparent; border: none; color: var(--text-dim);
-    padding: 8px 14px; border-radius: 12px; font-size: 10px; font-weight: 600;
+    padding: 8px 10px; border-radius: 12px; font-size: 10px; font-weight: 600;
     display: flex; flex-direction: column; align-items: center; gap: 2px;
-    min-width: 58px; cursor: pointer;
+    min-width: 52px; cursor: pointer; transition: all 0.2s;
   }
   .tab-btn .t-icon { font-size: 20px; }
   .tab-btn.active { background: var(--accent); color: #fff; }
@@ -492,26 +532,32 @@
     <!-- View 3: Tracker -->
     <div class="view" id="view-tracker">
       <div class="tracker-grid">
-        <div class="tracker-card">
-          <div class="tc-title">Дедлайны</div>
-          <div class="tc-value" id="statDeadlines">0/0</div>
-          <div class="tc-sub">Выполнено</div>
+        <div class="tracker-card deadlines">
+          <div class="tc-icon">📚</div>
+          <div>
+            <div class="tc-title">Дедлайны</div>
+            <div class="tc-value" id="statDeadlines">0/0</div>
+            <div class="tc-sub">Выполнено задач</div>
+          </div>
         </div>
-        <div class="tracker-card">
-          <div class="tc-title">Бюджет</div>
-          <div class="tc-value" id="statBudget">0 ₽</div>
-          <div class="tc-sub">Остаток</div>
+        <div class="tracker-card budget">
+          <div class="tc-icon">💰</div>
+          <div>
+            <div class="tc-title">Бюджет</div>
+            <div class="tc-value" id="statBudget">0 ₽</div>
+            <div class="tc-sub">Остаток</div>
+          </div>
         </div>
       </div>
 
       <div class="card">
-        <div class="card-title">🎯 Привычки</div>
+        <div class="card-title"><span class="ct-icon">🎯</span>Привычки</div>
         <div id="habitsList"></div>
         <button class="action-btn" onclick="openModal('modalHabit')">+ Добавить привычку</button>
       </div>
 
       <div class="card">
-        <div class="card-title">💰 Бюджет на неделю</div>
+        <div class="card-title"><span class="ct-icon">💸</span>Бюджет на неделю</div>
         <div class="budget-input">
           <input type="number" id="budgetLimit" placeholder="Лимит ₽" oninput="saveBudgetLimit()">
         </div>
@@ -524,7 +570,7 @@
       </div>
 
       <div class="card">
-        <div class="card-title">😴 Сон сегодня</div>
+        <div class="card-title"><span class="ct-icon">😴</span>Сон сегодня</div>
         <div class="form-row">
           <div class="form-group">
             <label>Отбой</label>
@@ -751,7 +797,8 @@ const HOLIDAYS = [...HOLIDAYS_2026, ...HOLIDAYS_2027];
 
 const SUMMER_VACATION = { startMonth: 6, startDay: 1, endMonth: 7, endDay: 31 };
 
-let state = {
+// Дефолтное состояние
+const DEFAULT_STATE = {
   tasks: {},
   templates: [],
   categories: [...DEFAULT_CATEGORIES],
@@ -764,19 +811,28 @@ let state = {
   activeFilter: 'all'
 };
 
+let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+
+// Миграция state — сохраняем старые данные, добавляем новые поля
 function loadState() {
   const saved = localStorage.getItem('planProState');
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
-      state = { ...state, ...parsed };
-      state.settings = { ...state.settings, ...(parsed.settings || {}) };
-      if (!state.categories || state.categories.length === 0) state.categories = [...DEFAULT_CATEGORIES];
-      if (!state.habits) state.habits = [];
-      if (!state.notes) state.notes = [];
-      if (!state.budget) state.budget = { limit: 5000, expenses: [] };
-      if (!state.sleep) state.sleep = { start: '', end: '' };
-    } catch(e) {}
+      // Сохраняем существующие данные пользователя
+      state.tasks = parsed.tasks || {};
+      state.templates = parsed.templates || [];
+      state.templateCompletions = parsed.templateCompletions || {};
+      state.habits = parsed.habits || [];
+      state.notes = parsed.notes || [];
+      state.budget = parsed.budget || { limit: 5000, expenses: [] };
+      state.sleep = parsed.sleep || { start: '', end: '' };
+      state.activeFilter = parsed.activeFilter || 'all';
+      state.categories = parsed.categories && parsed.categories.length > 0 ? parsed.categories : [...DEFAULT_CATEGORIES];
+      state.settings = { ...DEFAULT_STATE.settings, ...(parsed.settings || {}) };
+    } catch(e) {
+      console.error('Load state error', e);
+    }
   }
   applyTheme();
 }
@@ -819,41 +875,75 @@ function updateWeekBadge() {
 
 function getCategoryById(id) { return state.categories.find(c => c.id === id) || state.categories[0]; }
 
-// ===== ВКЛАДКИ =====
+// ===== ВКЛАДКИ С АНИМАЦИЕЙ =====
 const viewOrder = ['view-calendar', 'view-all', 'view-tracker', 'view-schedule', 'view-notes'];
 
-function switchView(id) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+function switchView(id, direction = 'right') {
+  const currentView = document.querySelector('.view.active');
+  if (currentView && currentView.id === id) return;
+  
+  document.querySelectorAll('.view').forEach(v => {
+    v.classList.remove('active', 'slide-left', 'slide-right');
+  });
+  
+  const newView = document.getElementById(id);
+  newView.classList.add('active');
+  if (direction === 'left') newView.classList.add('slide-left');
+  else newView.classList.add('slide-right');
+  
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelector(`.tab-btn[data-view="${id}"]`)?.classList.add('active');
+  
   if (id === 'view-all') { renderStats(); renderFilterChips(); renderAllTasks(); }
   if (id === 'view-tracker') { renderHabits(); renderExpenses(); renderSleep(); updateTrackerStats(); }
   if (id === 'view-schedule') renderScheduleTimeline();
   if (id === 'view-notes') renderNotes();
   if (id === 'view-calendar') { renderCalendar(); renderTasks(); if (state.settings.calendarView === 'week') renderWeekTimeline(); }
-  document.getElementById('viewsWrapper').scrollTop = 0;
 }
 
 document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.onclick = () => { vibrate(10); switchView(btn.dataset.view); };
+  btn.onclick = () => {
+    vibrate(10);
+    const current = document.querySelector('.view.active').id;
+    const target = btn.dataset.view;
+    const currentIdx = viewOrder.indexOf(current);
+    const targetIdx = viewOrder.indexOf(target);
+    const direction = targetIdx > currentIdx ? 'right' : 'left';
+    switchView(target, direction);
+  };
 });
 
-// Свайпы между вкладками
-let swipeStartX = 0, swipeStartY = 0;
+// УЛУЧШЕННЫЕ СВАЙПЫ
+let swipeStartX = 0, swipeStartY = 0, swipeStartTime = 0;
 const wrapper = document.getElementById('viewsWrapper');
+
 wrapper.addEventListener('touchstart', e => {
   swipeStartX = e.touches[0].clientX;
   swipeStartY = e.touches[0].clientY;
+  swipeStartTime = Date.now();
 }, { passive: true });
+
 wrapper.addEventListener('touchend', e => {
   const dx = e.changedTouches[0].clientX - swipeStartX;
   const dy = e.changedTouches[0].clientY - swipeStartY;
-  if (Math.abs(dx) > 80 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+  const dt = Date.now() - swipeStartTime;
+  
+  // Увеличенный порог и учёт скорости
+  const velocity = Math.abs(dx) / dt;
+  const isHorizontalSwipe = Math.abs(dx) > 80 && Math.abs(dx) > Math.abs(dy) * 1.5;
+  const isFastSwipe = velocity > 0.5 && Math.abs(dx) > 40;
+  
+  if (isHorizontalSwipe || isFastSwipe) {
     const current = document.querySelector('.view.active').id;
     const idx = viewOrder.indexOf(current);
-    if (dx < 0 && idx < viewOrder.length - 1) switchView(viewOrder[idx + 1]);
-    if (dx > 0 && idx > 0) switchView(viewOrder[idx - 1]);
+    if (dx < 0 && idx < viewOrder.length - 1) {
+      vibrate(15);
+      switchView(viewOrder[idx + 1], 'right');
+    }
+    if (dx > 0 && idx > 0) {
+      vibrate(15);
+      switchView(viewOrder[idx - 1], 'left');
+    }
   }
 });
 
@@ -1304,7 +1394,7 @@ function renderTimelineInto(headerId, bodyId, weekStart, clickable) {
   }
   
   // Body
-  TIME_SLOTS.forEach((slot, slotIdx) => {
+  TIME_SLOTS.forEach((slot) => {
     const timeCol = document.createElement('div');
     timeCol.className = 'tl-time';
     timeCol.innerHTML = `${slot.start}`;
@@ -1316,15 +1406,12 @@ function renderTimelineInto(headerId, bodyId, weekStart, clickable) {
       const cell = document.createElement('div');
       cell.className = 'tl-cell';
       
-      const tasks = getTasksForDate(date).filter(t => {
-        if (!t.time) return false;
-        return t.time === slot.start;
-      });
+      const tasks = getTasksForDate(date).filter(t => t.time === slot.start);
       
       tasks.forEach(task => {
         const cat = getCategoryById(task.category);
         const ev = document.createElement('div');
-        ev.className = `tl-event ${task.weekType || ''}`;
+        ev.className = 'tl-event';
         ev.style.background = cat.color;
         ev.innerHTML = `<span class="et">${task.time}</span>${task.title}`;
         if (clickable) {
@@ -1732,8 +1819,13 @@ document.getElementById('importData').onclick = () => {
     reader.onload = (event) => {
       try {
         const imported = JSON.parse(event.target.result);
+        // Миграция: сохраняем все существующие данные
         state = { ...state, ...imported };
-        state.settings = { ...state.settings, ...(imported.settings || {}) };
+        state.settings = { ...DEFAULT_STATE.settings, ...(imported.settings || {}) };
+        if (!state.habits) state.habits = [];
+        if (!state.notes) state.notes = [];
+        if (!state.budget) state.budget = { limit: 5000, expenses: [] };
+        if (!state.sleep) state.sleep = { start: '', end: '' };
         saveState();
         applyTheme();
         updateWeekBadge();
@@ -1751,6 +1843,10 @@ document.getElementById('importData').onclick = () => {
 };
 
 document.getElementById('exportIcs').onclick = () => {
+  if (state.templates.length === 0) {
+    showToast('Пусто', 'Сначала добавь пары');
+    return;
+  }
   let ics = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//PlanPro//RU\r\n';
   const semesterStart = new Date(state.settings.semesterStart);
   const semesterEnd = new Date(semesterStart);
@@ -1873,45 +1969,8 @@ document.getElementById('nextMonth').onclick = () => {
   renderCalendar();
 };
 
-// ===== ДЕМО-ДАННЫЕ: ТВОЁ РАСПИСАНИЕ 1126М1ЮРск1 =====
-function loadDemoSchedule() {
-  if (state.templates.length > 0) return;
-  
-  state.templates = [
-    // ПОНЕДЕЛЬНИК (day=1)
-    { id: uid(), title: 'Актуальные проблемы развития судебной системы России', description: 'Пыпина Г.С. (лекция) а.309/НИРФИ', time: '16:20', category: 'study', weekday: 1, weekType: 'both', repeatType: 'weekly' },
-    { id: uid(), title: 'Актуальные проблемы развития судебной системы России', description: 'Пыпина Г.С. а.309/НИРФИ', time: '18:00', category: 'study', weekday: 1, weekType: 'both', repeatType: 'weekly' },
-    { id: uid(), title: 'Организационно-правовой статус Следственного комитета РФ', description: 'Пыпина Г.С. (лекция) а.309/НИРФИ', time: '19:40', category: 'study', weekday: 1, weekType: 'both', repeatType: 'weekly' },
-    
-    // СРЕДА (day=3)
-    { id: uid(), title: 'Управление проектами', description: 'Сосенков Ф.С. (лекция) а.204/НИРФИ', time: '16:20', category: 'study', weekday: 3, weekType: 'upper', repeatType: 'weekly' },
-    { id: uid(), title: 'Проблемы квалификации преступлений СК РФ', description: 'Пшеничнов И.М. (лекция) а.204/НИРФИ', time: '16:20', category: 'study', weekday: 3, weekType: 'lower', repeatType: 'weekly' },
-    { id: uid(), title: 'Управление проектами', description: 'Сосенков Ф.С. а.204/НИРФИ', time: '18:00', category: 'study', weekday: 3, weekType: 'upper', repeatType: 'weekly' },
-    { id: uid(), title: 'Проблемы квалификации преступлений СК РФ', description: 'Пшеничнов И.М. (лекция) а.204/НИРФИ', time: '18:00', category: 'study', weekday: 3, weekType: 'lower', repeatType: 'weekly' },
-    { id: uid(), title: 'Управление проектами', description: 'Сосенков Ф.С. а.204/НИРФИ', time: '19:40', category: 'study', weekday: 3, weekType: 'upper', repeatType: 'weekly' },
-    
-    // ЧЕТВЕРГ (day=4)
-    { id: uid(), title: 'Уголовное преследование в Российском уголовном процессе', description: 'Поляков М.П. (лекция) а.10/16', time: '16:20', category: 'study', weekday: 4, weekType: 'both', repeatType: 'weekly' },
-    { id: uid(), title: 'Уголовное преследование в Российском уголовном процессе', description: 'Поляков М.П. а.10/16', time: '18:00', category: 'study', weekday: 4, weekType: 'both', repeatType: 'weekly' },
-    { id: uid(), title: 'Организационно-правовой статус Следственного комитета РФ', description: 'Пыпина Г.С. а.10/16', time: '19:40', category: 'study', weekday: 4, weekType: 'both', repeatType: 'weekly' },
-    
-    // ПЯТНИЦА (day=5)
-    { id: uid(), title: 'Организация деятельности Прокуратуры РФ', description: 'Дубов Е.И. (лекция) а.204/НИРФИ', time: '16:20', category: 'study', weekday: 5, weekType: 'upper', repeatType: 'weekly' },
-    { id: uid(), title: 'Уголовная политика России', description: 'Петрянин А.В. (лекция) а.204/НИРФИ', time: '16:20', category: 'study', weekday: 5, weekType: 'lower', repeatType: 'weekly' },
-    { id: uid(), title: 'Организация деятельности Прокуратуры РФ', description: 'Дубов Е.И. а.204/НИРФИ', time: '18:00', category: 'study', weekday: 5, weekType: 'upper', repeatType: 'weekly' },
-    { id: uid(), title: 'Уголовная политика России', description: 'Петрянин А.В. а.204/НИРФИ', time: '18:00', category: 'study', weekday: 5, weekType: 'lower', repeatType: 'weekly' },
-    { id: uid(), title: 'Уголовная политика России', description: 'Петрянин А.В. а.204/НИРФИ', time: '19:40', category: 'study', weekday: 5, weekType: 'lower', repeatType: 'weekly' },
-    
-    // СУББОТА (day=6)
-    { id: uid(), title: 'Криминолого-политическое обеспечение противодействия преступности', description: 'Горшенков Г.Н. а.5ю.ф.', time: '09:10', category: 'study', weekday: 6, weekType: 'both', repeatType: 'weekly' },
-    { id: uid(), title: 'Криминолого-политическое обеспечение противодействия преступности', description: 'Горшенков Г.Н. (лекция) а.5ю.ф.', time: '10:50', category: 'study', weekday: 6, weekType: 'both', repeatType: 'weekly' },
-  ];
-  saveState();
-}
-
 // ===== СТАРТ =====
 loadState();
-loadDemoSchedule();
 updateWeekBadge();
 
 if (state.settings.calendarView === 'week') {
